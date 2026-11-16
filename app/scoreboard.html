@@ -277,7 +277,7 @@
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 14px;
       padding: 12px 30px 10px;
-      min-width: 330px;
+      width: 380px;                 /* all penalty cards the same width */
     }
     .penalty-card.waiting { opacity: 0.4; }
 
@@ -299,7 +299,11 @@
       font-weight: 700;
       line-height: 1.05;
       color: #ffd54f;
-      font-variant-numeric: tabular-nums;
+      display: flex;
+    }
+    /* every character on a fixed width -> the time does not jump while counting */
+    .penalty-time .pd { display: inline-block; width: 0.76em; text-align: center; }
+    .penalty-time .pc { display: inline-block; width: 0.32em; text-align: center;
     }
     .penalty-card.p10 .penalty-time { color: #ef5350; }
 
@@ -498,11 +502,17 @@
       return name && name.trim() ? name : '?';
     }
 
+    // MM:SS with every character in a fixed-width box (Orbitron digits have different widths)
+    function penaltySpans(seconds) {
+      return formatTime(seconds).split('').map(ch =>
+        ch === ':' ? '<span class="pc">:</span>' : `<span class="pd">${ch}</span>`).join('');
+    }
+
     function renderPenalties(elementId, penalties) {
       document.getElementById(elementId).innerHTML = penaltyStatus(penalties).map(({ p, waiting }) => `
         <div class="penalty-card${p.duration > 120 ? ' p10' : ''}${waiting ? ' waiting' : ''}">
           <span class="penalty-duration-badge ${p.duration > 120 ? 'min10' : 'min2'}">${p.duration > 120 ? '10 MIN' : '2 MIN'}</span>
-          <span class="penalty-time">${formatTime(p.timeLeft)}</span>
+          <span class="penalty-time">${penaltySpans(p.timeLeft)}</span>
         </div>`).join('');
     }
 
