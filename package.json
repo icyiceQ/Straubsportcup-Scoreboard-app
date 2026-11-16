@@ -10,7 +10,10 @@
   "scripts": {
     "start": "electron .",
     "selftest": "set SCOREBOARD_SELFTEST=1&& electron .",
-    "dist": "electron-builder --win portable"
+    "dist": "npm run dist:win-x64 && npm run dist:win-arm64",
+    "dist:win-x64": "electron-builder --win portable --x64 --publish never",
+    "dist:win-arm64": "electron-builder --win portable --arm64 --publish never",
+    "dist:mac": "electron-builder --mac dmg zip --arm64 --publish never"
   },
   "build": {
     "appId": "ch.unihockey.scoreboard",
@@ -28,7 +31,15 @@
       "icon": "build/icon.png"
     },
     "portable": {
-      "artifactName": "Unihockey-Scoreboard.exe"
+      "artifactName": "Unihockey-Scoreboard-Windows-${arch}.exe"
+    },
+    "mac": {
+      "category": "public.app-category.sports",
+      "icon": "build/icon.png",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "notarize": false,
+      "artifactName": "Unihockey-Scoreboard-macOS-${arch}.${ext}"
     }
   },
   "devDependencies": {
