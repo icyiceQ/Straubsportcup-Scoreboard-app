@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Scoreboard</title>
+  <style>
+    @import url('fonts/fonts.css');   /* bundled fonts – works offline */
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Designed for 1920×1080, scaled to fit any screen (see fitToScreen) */
+    html { background: #060b18; overflow: hidden; height: 100%; }
+    body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      background: #060b18;
+      font-family: 'Inter', sans-serif;
+      color: #e0e6f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 18px;
+    }
+
+    /* ── Tournament name (top line) ── */
+    .tournament-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.32em;
+      color: #8a96b8;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 1820px;
+    }
+
+    /* ── Background Accents ── */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,144,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -200px; right: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(123,47,247,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── Main Scoreboard Container ── */
+    .scoreboard {
+      width: 1820px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    /* ── Period Bar ── */
+    .period-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      margin-bottom: 16px;
+    }
+
+    .period-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #6b7a99;
+    }
+
+    .period-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #ffd900;
+      background: rgba(0,212,255,0.08);
+      padding: 0.3rem 1.4rem;
+      border-radius: 8px;
+      border: 1px solid rgba(0,212,255,0.15);
+    }
+
+    .period-value.break { color: #ffd54f; }
+    .period-value.done { color: #00e676; }
+    .match-time {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #6b7a99;
+      letter-spacing: 0.1em;
+    }
+
+    .banner {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 6rem;
+      font-weight: 900;
+      color: #ffd54f;
+      text-shadow: 0 0 50px rgba(255,213,79,0.25);
+      letter-spacing: 0.04em;
+      height: 288px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .next-match {
+      position: fixed;
+      left: 0; right: 0; bottom: 28px;
+      text-align: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: calc(1.6rem + 2pt);   /* 1.6rem + 2 Punkte */
+      font-weight: 500;
+      color: #6b7a99;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .next-match b { color: #c0c8e0; font-weight: 700; }
+
+    /* ── Score Row ── */
+    .score-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      gap: 0;
+    }
+
+    .team-block {
+      flex: 1 1 0;      /* both sides always equal width -> score stays centered */
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .team-block.home { align-items: flex-end; padding-right: 60px; }
+    .team-block.away { align-items: flex-start; padding-left: 60px; }
+
+    .team-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .team-block.home .team-name { color: #00d4ff; }
+    .team-block.away .team-name { color: #00d4ff; }
+
+    .team-sub {
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #4a5578;
+    }
+
+    .score-center {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding: 0 20px;
+    }
+
+    .score {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13rem;
+      font-weight: 900;
+      line-height: 1;
+      width: 300px;     /* fixed width: colon stays exactly in the middle */
+      height: 208px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    .score.two-digit { font-size: 9.5rem; }
+
+    .score.home-score { color: #00d4ff; text-shadow: 0 0 60px rgba(0,212,255,0.3); }
+    .score.away-score { color: #00d4ff; text-shadow: 0 0 60px rgba(255,76,106,0.3); }
+
+    .score-divider {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 6.5rem;
+      font-weight: 400;
+      color: #2a3352;
+    }
+
+    /* ── Clock ── */
+    .clock-section {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .clock {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 0 40px rgba(255,255,255,0.12);
+      transition: color 0.3s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .clock .digit {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 210px;
+    }
+
+    .clock .colon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 76px;
+    }
+
+    .clock.break { color: #ffd54f; text-shadow: 0 0 40px rgba(255,213,79,0.2); }
+
+    .clock.stopped {
+      color: #ff4c6a;
+    }
+
+    .clock-label {
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: #3d4a6b;
+    }
+
+    /* ── Penalty Boxes ── */
+    .penalties-section {
+      margin-top: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 80px;
+    }
+
+    .penalty-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .penalty-box.home { align-items: flex-end; }
+    .penalty-box.away { align-items: flex-start; }
+
+    .penalty-header {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #3d4a6b;
+      margin-bottom: 6px;
+    }
+
+    .penalty-card {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 12px 28px;
+      min-width: 280px;
+      backdrop-filter: blur(8px);
+    }
+
+    .penalty-box.home .penalty-card { flex-direction: row-reverse; }
+    .penalty-card.waiting { opacity: 0.45; }
+
+    .penalty-player {
+      font-weight: 600;
+      font-size: 1.3rem;
+      color: #c0c8e0;
+      min-width: 80px;
+    }
+
+    .penalty-box.home .penalty-player { text-align: right; }
+
+    .penalty-duration-badge {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 6px;
+      color: #fff;
+    }
+
+    .penalty-duration-badge.min2 { background: rgba(255,193,7,0.25); color: #ffd54f; border: 1px solid rgba(255,193,7,0.3); }
+    .penalty-duration-badge.min10 { background: rgba(244,67,54,0.25); color: #ef5350; border: 1px solid rgba(244,67,54,0.3); }
+
+    .penalty-time {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ffd54f;
+      min-width: 100px;
+    }
+
+    .penalty-box.home .penalty-time { text-align: right; }
+    .penalty-box.away .penalty-time { text-align: left; }
+
+    .penalty-empty {
+      font-size: 1.1rem;
+      color: #2a3352;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="scoreboard">
+    <!-- Meisterschaft · Liga -->
+    <div class="tournament-title" id="tournamentTitle"></div>
+
+    <!-- Match info -->
+    <div class="period-bar">
+      <span class="period-label" id="matchLabel">Spiel</span>
+      <span class="period-value" id="period">1</span>
+      <span class="match-time" id="matchTime"></span>
+    </div>
+
+    <!-- Score Row (left: Team 2, right: Team 1 – as seen from the bench) -->
+    <div class="score-row">
+      <div class="team-block home">
+        <div class="team-name" id="awayTeamName">AWAY</div>
+        <div class="team-sub">&nbsp;</div>
+      </div>
+
+      <div class="score-center">
+        <div class="score home-score" id="awayScore">0</div>
+        <div class="score-divider">:</div>
+        <div class="score away-score" id="homeScore">0</div>
+      </div>
+
+      <div class="team-block away">
+        <div class="team-name" id="homeTeamName">HOME</div>
+        <div class="team-sub">&nbsp;</div>
+      </div>
+    </div>
+
+    <!-- Clock -->
+    <div class="clock-section">
+      <div class="banner" id="banner"></div>
+      <div class="clock stopped" id="clock"><span class="digit">1</span><span class="digit">8</span><span class="colon">:</span><span class="digit">0</span><span class="digit">0</span></div>
+      <div class="clock-label" id="clockLabel">Restzeit</div>
+    </div>
+
+    <!-- 2-minute penalties -->
+    <div class="penalties-section">
+      <div class="penalty-box home" id="awayPenalties"></div>
+      <div class="penalty-box away" id="homePenalties"></div>
+    </div>
+  </div>
+
+  <div class="next-match" id="nextMatch"></div>
+
+  <script src="js/leagues.js"></script>
+  <script src="js/sync.js"></script>
+  <script>
+    // ── State ──
+    let state = loadRound();
+
+    let lastRaw = '';
+    let lastUpdate = 0;
+    onMsg((msg) => {
+      if (msg && msg.type === 'state-update') {
+        state = msg.state;
+        lastUpdate = Date.now();
+        try { lastRaw = localStorage.getItem(STORAGE_KEY) || lastRaw; } catch (err) {}
+        render();
+      }
+    });
+
+    // If nothing arrives for a while (e.g. Control Panel was reloaded), ask again
+    setInterval(() => {
+      if (Date.now() - lastUpdate > 2000) sendMsg({ type: 'request-state' });
+    }, 2000);
+
+    // Fallback sync via localStorage (every page in the Control window saves there),
+    // e.g. while the Control window shows the menu or "Neue Runde".
+    function syncFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw === lastRaw) return;
+        lastRaw = raw;
+        state = raw ? Object.assign(getEmptyRound(), JSON.parse(raw)) : getEmptyRound();
+        render();
+      } catch (err) { /* ignore */ }
+    }
+    window.addEventListener('storage', (e) => { if (e.key === STORAGE_KEY) syncFromStorage(); });
+    setInterval(syncFromStorage, 100);
+
+    sendMsg({ type: 'request-state' });
+
+    function show(sel, on) { document.querySelector(sel).style.display = on ? '' : 'none'; }
+
+    // ── Render ──
+    function render() {
+      const schedule = state.schedule || [];
+      const it = schedule[state.current] || null;
+      const phase = state.phase || 'match';
+      const brk = phase === 'break', done = phase === 'done';
+
+      const title = document.getElementById('tournamentTitle');
+      const banner = document.getElementById('banner');
+      const clock = document.getElementById('clock');
+      const clockLabel = document.getElementById('clockLabel');
+      const matchLabel = document.getElementById('matchLabel');
+      const periodEl = document.getElementById('period');
+      const matchTime = document.getElementById('matchTime');
+      const nextEl = document.getElementById('nextMatch');
+
+      // No round yet: only the name of the championship
+      if (!it) {
+        title.style.display = 'none';
+        show('.period-bar', false);
+        show('.score-row', false);
+        show('.penalties-section', false);
+        clock.style.display = 'none';
+        clockLabel.textContent = '';
+        banner.textContent = state.competitionName || loadConfig().competitionName;
+        banner.style.display = 'flex';
+        banner.style.marginTop = '300px';
+        nextEl.innerHTML = '';
+        return;
+      }
+      banner.style.marginTop = '';
+      show('.period-bar', true);
+      show('.score-row', true);
+      show('.penalties-section', !brk && !done);
+
+      title.textContent = [state.competitionName, state.leagueName].filter(Boolean).join(' · ');
+      title.style.display = title.textContent ? '' : 'none';
+
+      setFitted('homeTeamName', teamName(state.homeTeam));
+      setFitted('awayTeamName', teamName(state.awayTeam));
+      [['homeScore', state.homeScore], ['awayScore', state.awayScore]].forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        el.textContent = val;
+        el.classList.toggle('two-digit', val >= 10);
+      });
+
+      // Info bar
+      const nr = (state.current + 1) + ' / ' + schedule.length;
+      periodEl.style.display = '';
+      if (done) {
+        matchLabel.textContent = '';
+        periodEl.textContent = 'Schlussresultat Spiel ' + nr;
+        matchTime.textContent = '';
+      } else if (brk) {
+        matchLabel.textContent = 'Nächstes Spiel';
+        periodEl.textContent = nr;
+        matchTime.textContent = it.time ? 'Plan ' + it.time : '';
+      } else {
+        matchLabel.textContent = 'Spiel';
+        periodEl.textContent = nr;
+        matchTime.textContent = it.time ? 'Start ' + it.time : '';
+      }
+      periodEl.classList.toggle('break', brk);
+      periodEl.classList.toggle('done', done);
+
+      // Clock / break countdown / end of the evening
+      if (done) {
+        clock.style.display = 'none';
+        banner.textContent = 'SPIELABEND BEENDET';
+        banner.style.display = 'flex';
+        clockLabel.textContent = '';
+      } else {
+        banner.style.display = 'none';
+        clock.style.display = '';
+        clock.innerHTML = formatTimeSpans(brk ? state.breakLeft : state.timeLeft);
+        clock.classList.toggle('break', brk);
+        clock.classList.toggle('stopped', !state.running);
+        clockLabel.textContent = brk ? 'Pause' : 'Restzeit';
+      }
+
+      // Following match
+      const nx = done ? null : schedule[state.current + 1];
+      nextEl.innerHTML = nx
+        ? 'Danach: <b>' + escapeHtml(teamName(nx.home)) + '</b> vs <b>' + escapeHtml(teamName(nx.away)) + '</b>' +
+          (nx.time ? ' &middot; ' + escapeHtml(nx.time) : '')
+        : '';
+
+      renderPenalties('homePenalties', state.homePenalties);
+      renderPenalties('awayPenalties', state.awayPenalties);
+    }
+
+    // Set text and shrink font until it fits (long team names)
+    function setFitted(id, text, base = 56, min = 24) {
+      const el = document.getElementById(id);
+      if (el.textContent === text && el.dataset.fitted === '1') return;
+      el.textContent = text;
+      el.style.textOverflow = 'clip';
+      let size = base;
+      el.style.fontSize = size + 'px';
+      while (el.scrollWidth > el.clientWidth && size > min) {
+        size -= 2;
+        el.style.fontSize = size + 'px';
+      }
+      el.style.textOverflow = '';
+      el.dataset.fitted = '1';
+    }
+
+    function teamName(name) {
+      return name && name.trim() ? name : '?';
+    }
+
+    function renderPenalties(elementId, penalties) {
+      document.getElementById(elementId).innerHTML = penaltyStatus(penalties).map(({ p, waiting }) => `
+        <div class="penalty-card${waiting ? ' waiting' : ''}">
+          <span class="penalty-duration-badge ${p.duration > 120 ? 'min10' : 'min2'}">${p.duration > 120 ? '10 MIN' : '2 MIN'}</span>
+          <span class="penalty-time">${formatTime(p.timeLeft)}</span>
+        </div>`).join('');
+    }
+
+    // Scale the 1920×1080 layout to the window / screen (keeps proportions, centered)
+    function fitToScreen() {
+      const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      const b = document.body.style;
+      b.transform = 'scale(' + s + ')';
+      b.left = Math.round((window.innerWidth - 1920 * s) / 2) + 'px';
+      b.top = Math.round((window.innerHeight - 1080 * s) / 2) + 'px';
+    }
+    window.addEventListener('resize', fitToScreen);
+    fitToScreen();
+
+    render();
+    // Re-fit team names once the web font has loaded
+    if (document.fonts) document.fonts.ready.then(() => {
+      document.querySelectorAll('.team-name').forEach(el => el.dataset.fitted = '0');
+      render();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+/* ── Gemeinsame Styles für Menü, Neue Runde, Einstellungen und Control Panel ── */
+    @import url('../fonts/fonts.css');   /* bundled fonts – works offline */
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0d1120;
+      color: #c8d0e8;
+      padding: 16px 24px;
+      min-height: 100vh;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #e0e6f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h1::before { content: '🏑'; font-size: 1.1rem; }
+
+    /* ── Sections ── */
+    .section {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #4a5578;
+      margin-bottom: 8px;
+    }
+
+    /* ── Form elements ── */
+    .row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 8px; }
+    .row:last-child { margin-bottom: 0; }
+
+    .field { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #5a6688;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 7px 10px;
+      color: #e0e6f0;
+      font-size: 0.88rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea { width: 100%; min-height: 110px; font-family: Consolas, monospace; font-size: 0.8rem; resize: vertical; }
+
+    input:focus, textarea:focus { border-color: rgba(0,212,255,0.4); }
+
+    input[type="number"] {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    /* ── Buttons ── */
+    button {
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.8rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 7px 14px;
+      transition: transform 0.1s, opacity 0.15s;
+      white-space: nowrap;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); opacity: 0.85; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    .btn-primary { background: linear-gradient(135deg, #00b4d8, #0077b6); color: #fff; }
+    .btn-danger  { background: linear-gradient(135deg, #ff4c6a, #d32f2f); color: #fff; }
+    .btn-success { background: linear-gradient(135deg, #00c853, #009624); color: #fff; }
+    .btn-warning { background: linear-gradient(135deg, #ff9800, #e65100); color: #fff; }
+    .btn-purple  { background: linear-gradient(135deg, #7b2ff7, #9c27b0); color: #fff; }
+
+    .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
+    .btn-lg { padding: 10px 22px; font-size: 0.95rem; border-radius: 8px; }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #8896b3;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.04); }
+
+    /* ── Current match ── */
+    .match-nav { display: flex; align-items: center; gap: 12px; }
+    .match-info { flex: 1; text-align: center; }
+    .match-info .mi-top {
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.14em; color: #5a6688;
+    }
+    .match-info .mi-teams { font-size: 1.15rem; font-weight: 700; color: #e0e6f0; margin-top: 2px; }
+    .match-info .mi-next { font-size: 0.78rem; color: #5a6688; margin-top: 4px; }
+    .warn { color: #ff9800; font-weight: 700; }
+
+    /* ── Score Controls ── */
+    /* ── Popup dialog ── */
+    dialog.popup {
+      margin: auto;
+      background: #161b2e;
+      color: #c8d0e8;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 18px 20px;
+      width: 340px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    dialog.popup::backdrop { background: rgba(0,0,0,0.6); }
+    dialog.popup-wide { width: 620px; }
+
+    /* Displays popup */
+    .display-item {
+      display: flex; align-items: center; gap: 14px;
+      background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 8px;
+    }
+    .display-item.active { border-color: rgba(0,212,255,0.5); background: rgba(0,212,255,0.07); }
+    .display-num {
+      font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 700;
+      width: 44px; height: 44px; border-radius: 8px; background: rgba(0,119,182,0.35);
+      display: flex; align-items: center; justify-content: center; color: #fff; flex: none;
+    }
+    .display-text { flex: 1; min-width: 0; }
+    .display-name { font-weight: 700; color: #e0e6f0; }
+    .display-sub { font-size: 0.78rem; color: #8896b3; margin-top: 2px; }
+    .tag { display: inline-block; font-size: 0.68rem; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.08); margin-left: 4px; }
+    .tag-sb { background: rgba(0,212,255,0.2); color: #00d4ff; }
+    .display-warn {
+      font-size: 0.8rem; color: #ffb74d; background: rgba(255,152,0,0.1);
+      border-radius: 8px; padding: 8px 10px; margin-top: 8px; line-height: 1.45;
+    }
+    dialog.popup input[type="number"] { width: 100%; font-size: 1.4rem; padding: 8px; }
+
+    /* Score left / clock middle / score right */
+    .game-grid { display: grid; grid-template-columns: 200px 1fr 200px; gap: 16px; align-items: center; }
+    .clock-column { display: flex; flex-direction: column; align-items: center; }
+
+    .score-ctrl { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+    .score-ctrl button { width: 64px; padding: 10px 0; font-size: 1.3rem; border-radius: 8px; }
+
+    .score-display {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 3.2rem;
+      font-weight: 700;
+      min-width: 50px;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .score-display.home { color: #00d4ff; }
+    .score-display.away { color: #00d4ff; }
+
+    .score-team-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #5a6688;
+      margin-bottom: 2px;
+    }
+
+    .score-column { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
+    .score-team-label { text-align: center; max-width: 100%; overflow-wrap: anywhere; }
+
+    /* ── Clock Display ── */
+    .clock-display {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+      color: #fff;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+
+    .clock-display.stopped { color: #ff4c6a; }
+
+    .clock-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .clock-hint { text-align: center; font-size: 0.75rem; color: #5a6688; margin-top: 6px; }
+
+    .time-set-row { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+    .time-set-row input[type="number"] { width: 64px; padding: 5px 6px; font-size: 0.9rem; }
+    .time-set-row .time-colon { font-family: 'Orbitron', sans-serif; color: #5a6688; }
+
+    /* ── Penalty Section ── */
+    .penalty-btn { padding: 7px 18px; font-size: 0.85rem; border-radius: 8px; }
+    .penalty-list { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+
+    .penalty-item {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,0,0,0.2); border-radius: 6px;
+      padding: 5px 10px; font-size: 0.82rem;
+    }
+
+    .penalty-item.queued { opacity: 0.55; }
+    .penalty-item .pi-dur { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ffd54f; }
+    .penalty-item .pi-time { font-family: 'Orbitron', sans-serif; font-size: 0.95rem; font-weight: 700; color: #ffd54f; margin-left: auto; }
+    .penalty-item button { padding: 4px 10px; font-size: 0.7rem; border-radius: 6px; }
+
+    .penalty-side { margin-bottom: 8px; }
+    .penalty-side-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px; }
+    .penalty-side-label.home { color: #00d4ff; }
+    .penalty-side-label.away { color: #00d4ff; }
+
+    .cols { display: flex; gap: 10px; }
+    .cols > * { flex: 1; }
+
+    select {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 7px 10px;
+      color: #e0e6f0;
+      font-size: 0.88rem;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+    select:focus { border-color: rgba(0,212,255,0.4); }
+
+    /* ── Schedule table ── */
+    /* own scroll area: following the current match never scrolls the page */
+    #scheduleWrap { max-height: 420px; overflow-y: auto; position: relative; }
+    .sched thead th { position: sticky; top: 0; background: #12172a; z-index: 1; }
+    .sched { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .sched th {
+      text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+      color: #4a5578; padding: 4px 4px; font-weight: 700;
+    }
+    .sched td { padding: 2px 4px; vertical-align: middle; }
+    .sched tr.current td { background: rgba(0,212,255,0.10); }
+    .sched tr.current td:first-child { box-shadow: inset 3px 0 0 #00d4ff; }
+    .sched tr.played td { opacity: 0.6; }
+    .sched input[type="text"] { width: 100%; padding: 4px 6px; font-size: 0.8rem; }
+    .sched input.t-time { width: 60px; }
+    .sched input.empty { border-color: rgba(255,152,0,0.5); }
+    .sched select { padding: 4px 4px; font-size: 0.75rem; }
+    .sched td.num { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #5a6688; width: 28px; text-align: right; }
+    .sched td.res { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #c0c8e0; width: 48px; text-align: center; }
+    .sched td.act { white-space: nowrap; width: 1%; }
+    .sched td.act button { padding: 3px 7px; font-size: 0.7rem; }
+    .sched-empty { color: #5a6688; font-style: italic; font-size: 0.85rem; padding: 8px 0; }
+    .hint { font-size: 0.75rem; color: #5a6688; line-height: 1.5; margin-bottom: 6px; }
+    .hint code { color: #c0c8e0; }
+    details summary { cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #8896b3; margin-top: 10px; }

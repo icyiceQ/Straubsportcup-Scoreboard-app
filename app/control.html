@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Panel</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .round-info { font-size: 0.8rem; color: #5a6688; margin: -6px 0 10px; }
+    .round-info b { color: #8896b3; }
+    .clock-display.break { color: #ffd54f; }
+    .clock-display.done { color: #00e676; font-size: 1.4rem; }
+    .phase-label { text-align: center; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #5a6688; margin-bottom: 2px; min-height: 1em; }
+    .phase-label.break { color: #ffd54f; }
+    .sched select { width: 100%; padding: 4px 6px; font-size: 0.8rem; }
+    .sched select.empty { border-color: rgba(255,152,0,0.5); }
+    .sched td.time { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #8896b3; width: 56px; }
+    .pen-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .penalty-btn { padding: 7px 14px; }
+    .penalty-item .pi-dur.p10 { color: #ff6b81; }
+  </style>
+</head>
+<body>
+  <h1><span id="title">Control Panel</span>
+    <button class="btn-outline btn-sm" style="margin-left:auto" onclick="toMenu()">☰ Menü</button>
+    <button class="btn-primary btn-sm" id="displaysBtn" onclick="openDisplaysDialog()">🖥 Bildschirme</button>
+    <button class="btn-outline btn-sm" onclick="toSettings()">⚙ Einstellungen</button>
+  </h1>
+  <div class="round-info" id="roundInfo"></div>
+
+  <!-- ── Current match / navigation ── -->
+  <div class="section">
+    <div class="section-title">Aktuelles Spiel</div>
+    <div class="match-nav">
+      <button class="btn-outline btn-lg" id="prevBtn" onclick="manualGo(-1)">◀ Zurück</button>
+      <div class="match-info">
+        <div class="mi-top" id="miTop">—</div>
+        <div class="mi-teams" id="miTeams">—</div>
+        <div class="mi-next" id="miNext"></div>
+      </div>
+      <button class="btn-outline btn-lg" id="nextBtn" onclick="manualGo(1)">Weiter ▶</button>
+    </div>
+  </div>
+
+  <!-- ── Score & clock (score left/right, clock in the middle) ── -->
+  <div class="section">
+    <div class="section-title">Score &amp; Spieluhr</div>
+    <div class="game-grid">
+      <div class="score-column">
+        <div class="score-team-label" id="homeScoreLabel">TEAM 1</div>
+        <div class="score-display home" id="homeScoreDisplay">0</div>
+        <div class="score-ctrl">
+          <button class="btn-danger score-btn" onclick="changeScore('home', -1)">−</button>
+          <button class="btn-success score-btn" onclick="changeScore('home', 1)">+</button>
+        </div>
+      </div>
+
+      <div class="clock-column">
+        <div class="phase-label" id="phaseLabel"></div>
+        <div class="clock-display stopped" id="clockDisplay">18:00</div>
+        <div class="clock-buttons">
+          <button class="btn-success btn-lg" id="startStopBtn" onclick="toggleClock()">▶ Start</button>
+          <button class="btn-primary" id="skipBreakBtn" onclick="skipBreak()" style="display:none">⏭ Spiel jetzt starten</button>
+          <button class="btn-warning" onclick="playHorn()">📯 Horn</button>
+        </div>
+        <div class="clock-hint" id="clockHint"></div>
+        <div class="time-set-row">
+          <input type="number" id="setMinutes" value="18" min="0" max="99" title="Minuten">
+          <span class="time-colon">:</span>
+          <input type="number" id="setSeconds" value="0" min="0" max="59" title="Sekunden">
+          <button class="btn-primary btn-sm" onclick="setTime()">Zeit setzen</button>
+          <button class="btn-outline btn-sm" onclick="swapTeams()">⇄ Teams tauschen</button>
+        </div>
+      </div>
+
+      <div class="score-column">
+        <div class="score-team-label" id="awayScoreLabel">TEAM 2</div>
+        <div class="score-display away" id="awayScoreDisplay">0</div>
+        <div class="score-ctrl">
+          <button class="btn-danger score-btn" onclick="changeScore('away', -1)">−</button>
+          <button class="btn-success score-btn" onclick="changeScore('away', 1)">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2-minute penalties ── -->
+  <div class="section">
+    <div class="section-title">Strafen</div>
+    <div class="cols">
+      <div class="penalty-side">
+        <div class="penalty-side-label home" id="homePenLabel">TEAM 1</div>
+        <div class="pen-btns">
+          <button class="btn-primary penalty-btn" onclick="addPenalty('home', '2')">+ 2'</button>
+          <button class="btn-warning penalty-btn" onclick="addPenalty('home', '2+2')">+ 2+2'</button>
+          <button class="btn-danger penalty-btn" onclick="addPenalty('home', '2+10')">+ 2+10'</button>
+        </div>
+        <div class="penalty-list" id="homePenList"></div>
+      </div>
+      <div class="penalty-side">
+        <div class="penalty-side-label away" id="awayPenLabel">TEAM 2</div>
+        <div class="pen-btns">
+          <button class="btn-primary penalty-btn" onclick="addPenalty('away', '2')">+ 2'</button>
+          <button class="btn-warning penalty-btn" onclick="addPenalty('away', '2+2')">+ 2+2'</button>
+          <button class="btn-danger penalty-btn" onclick="addPenalty('away', '2+10')">+ 2+10'</button>
+        </div>
+        <div class="penalty-list" id="awayPenList"></div>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:8px; margin-bottom:0;">2-Min-Strafen eines Teams laufen nacheinander (2+2 = zwei 2-Min-Strafen, einzeln löschbar).
+      Bei 2+10 läuft die 10-Min-Strafe (persönlich, Team wieder vollzählig) nach Ablauf der zugehörigen 2 Min.</div>
+  </div>
+
+  <!-- ── Popup: displays ── -->
+  <dialog id="displaysDialog" class="popup popup-wide">
+    <div class="section-title">Bildschirme</div>
+    <div id="displayList"></div>
+    <div id="displayHint"></div>
+    <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
+      <button class="btn-outline btn-sm" onclick="identifyDisplays()">🔢 Bildschirme identifizieren</button>
+      <button class="btn-outline btn-sm" id="fullscreenBtn" onclick="setScoreboardFullscreen(!displayInfo.scoreboardFullscreen)">Vollbild</button>
+      <button class="btn-primary btn-sm" id="reopenBtn" onclick="openScoreboard()" style="display:none">Scoreboard öffnen</button>
+      <button class="btn-outline btn-sm" style="margin-left:auto" onclick="document.getElementById('displaysDialog').close()">Schliessen</button>
+    </div>
+  </dialog>
+
+  <!-- ── Schedule ── -->
+  <div class="section">
+    <div class="section-title">Spielplan</div>
+    <div class="hint">Zeiten sind Richtwerte (Startzeit + Spieldauer + Pause). „▶“ springt zu diesem Spiel, „✎“ korrigiert ein Resultat.</div>
+    <div id="scheduleWrap"></div>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+      <button class="btn-primary btn-sm" onclick="addItem()">+ Spiel</button>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:8px; justify-content:center; margin-top: 8px;">
+    <button class="btn-danger" onclick="resetRound()">Alle Resultate löschen &amp; zurück zu Spiel 1</button>
+  </div>
+
+  <script src="js/leagues.js"></script>
+  <script src="js/sync.js"></script>
+  <script>
+    // ── State ──
+    const config = loadConfig();
+    let state = loadRound();
+    let clockInterval = null;
+    let lastTick = null;
+
+    if (!hasRound(state)) location.replace('menu.html');
+
+    // Settings (duration / break) also apply to the running round
+    state.competitionName = config.competitionName;
+    state.matchDuration = config.matchDurationMin * 60;
+    state.breakDuration = config.breakDurationMin * 60;
+    if (state.phase === 'match' && !state.started) state.timeLeft = state.matchDuration;
+    if (state.phase === 'break') state.breakLeft = Math.min(state.breakLeft, state.breakDuration);
+    recomputeTimes(state);
+
+    onMsg((msg) => {
+      if (msg && msg.type === 'request-state') broadcast();
+    });
+
+    function broadcast() {
+      saveRound(state);
+      sendMsg({ type: 'state-update', state: JSON.parse(JSON.stringify(state)) });
+    }
+
+    // ── Navigation to other pages (clock is stopped first) ──
+    function leaveTo(url) {
+      if (state.running && !confirm('Die Uhr läuft und wird angehalten. Trotzdem wechseln?')) return;
+      storeResult();
+      haltClock();
+      broadcast();
+      location.href = url;
+    }
+    function toMenu() { leaveTo('menu.html'); }
+    function toSettings() { leaveTo('settings.html?from=control'); }
+
+    // ── Scoreboard & displays ──
+    let displayInfo = null;
+
+    function openScoreboard() {
+      if (SB_API) SB_API.openWindow('scoreboard').then(renderDisplays);
+      else window.open('scoreboard.html', 'scoreboard', 'width=1920,height=1080');
+    }
+
+    function openDisplaysDialog() {
+      if (!SB_API) { openScoreboard(); return; }
+      SB_API.getDisplays().then(info => {
+        renderDisplays(info);
+        document.getElementById('displaysDialog').showModal();
+      });
+    }
+
+    function chooseDisplay(id) { SB_API.setScoreboardDisplay(id).then(renderDisplays); }
+    function identifyDisplays() { SB_API.identifyDisplays(); }
+    function setScoreboardFullscreen(on) { SB_API.setScoreboardFullscreen(on).then(renderDisplays); }
+
+    // Header button shows the status; the popup lists all displays
+    function renderDisplays(info) {
+      if (info) displayInfo = info;
+      const d = displayInfo;
+      const btn = document.getElementById('displaysBtn');
+      if (!d) return;
+      const sb = d.displays.find(x => x.scoreboard);
+      const warn = !d.scoreboardOpen || d.displays.length < 2 || (sb && sb.control);
+      btn.textContent = !d.scoreboardOpen ? '⚠ Scoreboard geschlossen'
+        : d.displays.length < 2 ? '⚠ Nur 1 Bildschirm'
+        : '🖥 Scoreboard: Bildschirm ' + (sb ? sb.number : '?');
+      btn.className = (warn ? 'btn-warning' : 'btn-primary') + ' btn-sm';
+
+      document.getElementById('displayList').innerHTML = d.displays.map(x => {
+        const tags = [];
+        if (x.scoreboard) tags.push('<span class="tag tag-sb">Scoreboard</span>');
+        if (x.control) tags.push('<span class="tag">Control Panel</span>');
+        if (x.primary) tags.push('<span class="tag">Hauptbildschirm</span>');
+        return `<div class="display-item${x.scoreboard ? ' active' : ''}">
+          <div class="display-num">${x.number}</div>
+          <div class="display-text">
+            <div class="display-name">Bildschirm ${x.number}${x.label ? ' – ' + escapeHtml(x.label) : ''}</div>
+            <div class="display-sub">${x.width} × ${x.height} ${tags.join(' ')}</div>
+          </div>
+          <button class="${x.scoreboard ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="chooseDisplay(${x.id})"
+            ${x.scoreboard && d.scoreboardOpen ? 'disabled' : ''}>${x.scoreboard && d.scoreboardOpen ? '✓ Aktiv' : 'Scoreboard hierhin'}</button>
+        </div>`;
+      }).join('');
+
+      const msgs = [];
+      if (d.displays.length < 2) {
+        msgs.push('⚠ Windows meldet nur einen Bildschirm. Ist der Beamer/TV angeschlossen und eingeschaltet? ' +
+          'Mit <b>Win + P → „Erweitern“</b> einstellen (nicht „Duplizieren“).');
+      }
+      if (d.chosenLabel && !d.chosenAvailable) {
+        msgs.push('⚠ Der gewählte Bildschirm „' + escapeHtml(d.chosenLabel) + '“ ist nicht verbunden. ' +
+          'Sobald er angeschlossen wird, wechselt das Scoreboard automatisch dorthin.');
+      }
+      if (sb && sb.control && d.displays.length >= 2) {
+        msgs.push('Das Scoreboard ist auf dem gleichen Bildschirm wie das Control Panel (als Fenster, nicht Vollbild).');
+      }
+      if (!d.scoreboardOpen) msgs.push('Das Scoreboard-Fenster ist geschlossen.');
+      document.getElementById('displayHint').innerHTML = msgs.map(m => `<div class="display-warn">${m}</div>`).join('');
+
+      document.getElementById('fullscreenBtn').textContent = d.scoreboardFullscreen ? 'Vollbild beenden' : 'Vollbild';
+      document.getElementById('fullscreenBtn').disabled = !d.scoreboardOpen;
+      document.getElementById('reopenBtn').style.display = d.scoreboardOpen ? 'none' : '';
+    }
+
+    if (SB_API) {
+      SB_API.onDisplaysChanged(renderDisplays);
+      SB_API.getDisplays().then(renderDisplays);
+    }
+
+    // ── Horn ──
+    // Played here in the Control Panel: the operator clicks in this window, so audio is allowed.
+    let audioCtx = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    ['pointerdown', 'keydown'].forEach(ev =>
+      document.addEventListener(ev, () => { try { getAudioCtx(); } catch (e) {} }, { capture: true }));
+
+    function playHorn() {
+      const ctx = getAudioCtx();
+      const t0 = ctx.currentTime;
+      const duration = 3;
+      [
+        { type: 'sawtooth', freq: 220, gain: 0.5 },
+        { type: 'sawtooth', freq: 330, gain: 0.35 },
+        { type: 'square',   freq: 440, gain: 0.15 }
+      ].forEach(l => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = l.type;
+        osc.frequency.setValueAtTime(l.freq, t0);
+        g.gain.setValueAtTime(l.gain, t0);
+        g.gain.setValueAtTime(l.gain, t0 + duration - 0.05);
+        g.gain.linearRampToValueAtTime(0, t0 + duration);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + duration);
+      });
+    }
+
+    // ── Match navigation ──
+    function storeResult() {
+      const it = currentItem(state);
+      if (!it || state.phase === 'break') return;
+      if (state.started || state.homeScore > 0 || state.awayScore > 0) {
+        it.homeScore = state.homeScore;
+        it.awayScore = state.awayScore;
+      }
+    }
+
+    // Load a match. phase 'break': the break before this match runs first.
+    function goTo(index, phase) {
+      if (index < 0 || index >= state.schedule.length) return;
+      storeResult();
+      haltClock();
+      state.current = index;
+      const it = currentItem(state);
+      state.homeTeam = it.home;
+      state.awayTeam = it.away;
+      state.homeScore = it.homeScore ?? 0;
+      state.awayScore = it.awayScore ?? 0;
+      state.started = it.homeScore !== null;
+      state.homePenalties = [];
+      state.awayPenalties = [];
+      state.timeLeft = state.matchDuration;
+      state.phase = phase === 'break' && state.breakDuration > 0 ? 'break' : 'match';
+      state.breakLeft = state.phase === 'break' ? state.breakDuration : 0;
+      renderLocal();
+      renderSchedule();
+      broadcast();
+    }
+
+    function manualGo(delta) {
+      const target = state.current + delta;
+      if (target < 0 || target >= state.schedule.length) return;
+      if (state.running && !confirm('Die Uhr läuft. Trotzdem zum ' + (delta > 0 ? 'nächsten' : 'vorherigen') + ' Spiel wechseln?')) return;
+      goTo(target, 'match');
+    }
+
+    function jumpTo(index) {
+      if (index === state.current && state.phase === 'match') return;
+      if (state.running && !confirm('Die Uhr läuft. Trotzdem zu diesem Spiel wechseln?')) return;
+      goTo(index, 'match');
+    }
+
+    // ── Score ──
+    function changeScore(team, delta) {
+      if (state.phase === 'break') return;
+      if (team === 'home') state.homeScore = Math.max(0, state.homeScore + delta);
+      else state.awayScore = Math.max(0, state.awayScore + delta);
+      const it = currentItem(state);
+      if (it && !state.started && state.homeScore === 0 && state.awayScore === 0) {
+        it.homeScore = null;     // back to 0:0 before the match was played -> no result
+        it.awayScore = null;
+      } else {
+        storeResult();
+      }
+      renderLocal();
+      updateResultCell(state.current);
+      broadcast();
+    }
+
+    function swapTeams() {
+      [state.homeTeam, state.awayTeam] = [state.awayTeam, state.homeTeam];
+      [state.homeScore, state.awayScore] = [state.awayScore, state.homeScore];
+      [state.homePenalties, state.awayPenalties] = [state.awayPenalties, state.homePenalties];
+      const it = currentItem(state);
+      if (it) {
+        it.home = state.homeTeam; it.away = state.awayTeam;
+        [it.homeScore, it.awayScore] = [it.awayScore, it.homeScore];
+      }
+      renderLocal();
+      renderSchedule();
+      broadcast();
+    }
+
+    // ── Clock ──
+    // One clock for both phases: in 'match' it counts the match time, in 'break' the break.
+    function toggleClock() {
+      if (state.phase === 'done') return;
+      if (state.running) stopClock();
+      else startClock();
+    }
+
+    function startClock() {
+      if (state.phase === 'done') return;
+      if (state.phase === 'match' && state.timeLeft <= 0) return;
+      state.running = true;
+      if (state.phase === 'match') state.started = true;
+      lastTick = Date.now();
+      clearInterval(clockInterval);
+      clockInterval = setInterval(tick, 100);
+      renderLocal();
+      broadcast();
+    }
+
+    function haltClock() {
+      state.running = false;
+      clearInterval(clockInterval);
+      clockInterval = null;
+    }
+
+    function stopClock() {
+      haltClock();
+      renderLocal();
+      broadcast();
+    }
+
+    function tickPenalties(penalties, elapsed) {
+      penaltyStatus(penalties).forEach(({ p, waiting }) => {
+        if (!waiting) p.timeLeft = Math.max(0, p.timeLeft - elapsed);
+      });
+    }
+
+    function tick() {
+      const now = Date.now();
+      const elapsed = (now - lastTick) / 1000;
+      lastTick = now;
+
+      if (state.phase === 'break') {
+        state.breakLeft = Math.max(0, state.breakLeft - elapsed);
+        if (state.breakLeft <= 0) { breakFinished(); return; }
+        document.getElementById('clockDisplay').textContent = formatClock(state.breakLeft);
+        broadcast();
+        return;
+      }
+
+      state.timeLeft = Math.max(0, state.timeLeft - elapsed);
+      tickPenalties(state.homePenalties, elapsed);
+      tickPenalties(state.awayPenalties, elapsed);
+
+      const homeBefore = state.homePenalties.length;
+      const awayBefore = state.awayPenalties.length;
+      state.homePenalties = state.homePenalties.filter(p => p.timeLeft > 0);
+      state.awayPenalties = state.awayPenalties.filter(p => p.timeLeft > 0);
+      const penaltiesChanged = (state.homePenalties.length !== homeBefore || state.awayPenalties.length !== awayBefore);
+
+      if (state.timeLeft <= 0) { matchFinished(); return; }
+
+      document.getElementById('clockDisplay').textContent = formatClock(state.timeLeft);
+      if (penaltiesChanged) renderPenalties();
+      else updatePenaltyTimes();
+      broadcast();
+    }
+
+    // Match time is up: horn, then the break before the next match starts counting.
+    function matchFinished() {
+      playHorn();
+      state.timeLeft = 0;
+      storeResult();
+      if (state.current + 1 < state.schedule.length) {
+        goTo(state.current + 1, 'break');
+        if (state.phase === 'break') startClock();
+        else if (config.autoStartAfterBreak) startClock();   // no break configured
+      } else {
+        haltClock();
+        state.phase = 'done';
+        renderLocal();
+        renderSchedule();
+        broadcast();
+      }
+    }
+
+    // Break is over: next match starts (automatically, if set in the settings)
+    function breakFinished() {
+      haltClock();
+      state.phase = 'match';
+      state.breakLeft = 0;
+      state.timeLeft = state.matchDuration;
+      if (config.autoStartAfterBreak) {
+        playHorn();
+        startClock();
+      } else {
+        renderLocal();
+        broadcast();
+      }
+    }
+
+    function skipBreak() {
+      if (state.phase !== 'break') return;
+      haltClock();
+      state.phase = 'match';
+      state.breakLeft = 0;
+      state.timeLeft = state.matchDuration;
+      startClock();
+    }
+
+    function setTime() {
+      const mins = parseInt(document.getElementById('setMinutes').value) || 0;
+      const secs = parseInt(document.getElementById('setSeconds').value) || 0;
+      const t = mins * 60 + secs;
+      if (state.phase === 'break') state.breakLeft = t;
+      else {
+        if (state.phase === 'done') state.phase = 'match';
+        state.timeLeft = t;
+      }
+      renderLocal();
+      broadcast();
+    }
+
+    // ── Penalties: 2', 2+2' (two 2' in a row), 2+10' (10' starts after its 2') ──
+    let penSeq = 0;
+    function penId() { return Date.now() * 100 + (penSeq++ % 100); }
+
+    function addPenalty(team, kind) {
+      if (state.phase === 'break') return;
+      const list = team === 'home' ? state.homePenalties : state.awayPenalties;
+      const two = (label) => ({ id: penId(), duration: 120, timeLeft: 120, label });
+      if (kind === '2+2') {
+        list.push(two('2+2 · 1/2'), two('2+2 · 2/2'));
+      } else if (kind === '2+10') {
+        const p2 = two('2+10');
+        list.push(p2, { id: penId(), duration: 600, timeLeft: 600, label: '2+10', waitFor: p2.id });
+      } else {
+        list.push(two(''));
+      }
+      renderLocal();
+      broadcast();
+    }
+
+    function removePenalty(team, id) {
+      if (team === 'home') state.homePenalties = state.homePenalties.filter(p => p.id !== id);
+      else state.awayPenalties = state.awayPenalties.filter(p => p.id !== id);
+      renderLocal();
+      broadcast();
+    }
+
+    // ── Schedule editing ──
+    function scheduleChanged() {
+      recomputeTimes(state);
+      renderSchedule();
+      renderLocal();
+      broadcast();
+    }
+
+    function updateTeam(i, side, value) {
+      const it = state.schedule[i];
+      if (!it) return;
+      it[side] = value;
+      if (i === state.current) state[side + 'Team'] = value;
+      scheduleChanged();
+    }
+
+    function addItem() {
+      state.schedule.push(makeScheduleItem({}));
+      if (state.phase === 'done') state.phase = 'match';
+      scheduleChanged();
+    }
+
+    function deleteItem(i) {
+      const it = state.schedule[i];
+      if (!it || state.schedule.length <= 1) { alert('Das letzte Spiel kann nicht gelöscht werden.'); return; }
+      if (!confirm('Spiel löschen?\n' + (it.home || '?') + ' – ' + (it.away || '?'))) return;
+      if (i === state.current) {
+        haltClock();
+        state.schedule.splice(i, 1);
+        const c = Math.min(i, state.schedule.length - 1);
+        state.current = -1;          // load the new current match without storing the deleted one
+        goTo(c, 'match');
+      } else {
+        state.schedule.splice(i, 1);
+        if (i < state.current) state.current--;
+      }
+      scheduleChanged();
+    }
+
+    function moveItem(i, delta) {
+      const j = i + delta;
+      if (j < 0 || j >= state.schedule.length) return;
+      [state.schedule[i], state.schedule[j]] = [state.schedule[j], state.schedule[i]];
+      if (state.current === i) state.current = j;
+      else if (state.current === j) state.current = i;
+      scheduleChanged();
+    }
+
+    function editResult(i) {
+      const it = state.schedule[i];
+      const cur = it.homeScore !== null ? it.homeScore + ':' + it.awayScore : '';
+      const input = prompt('Resultat für ' + (it.home || '?') + ' – ' + (it.away || '?') + '\n(z.B. 3:2, leer = kein Resultat)', cur);
+      if (input === null) return;
+      const m = /^\s*(\d+)\s*[:\-]\s*(\d+)\s*$/.exec(input);
+      if (input.trim() && !m) { alert('Bitte im Format 3:2 eingeben.'); return; }
+      it.homeScore = m ? parseInt(m[1]) : null;
+      it.awayScore = m ? parseInt(m[2]) : null;
+      if (i === state.current && state.phase !== 'break') {
+        state.homeScore = it.homeScore ?? 0;
+        state.awayScore = it.awayScore ?? 0;
+        state.started = it.homeScore !== null;
+      }
+      scheduleChanged();
+    }
+
+    function resetRound() {
+      if (!confirm('Alle Resultate löschen und zurück zum ersten Spiel? Der Spielplan bleibt erhalten.')) return;
+      haltClock();
+      state.schedule.forEach(it => { it.homeScore = null; it.awayScore = null; });
+      state.current = -1;
+      goTo(0, 'match');
+    }
+
+    // ── Render ──
+    function teamLabel(name, fallback) { return name && name.trim() ? name : fallback; }
+
+    function renderHeader() {
+      document.getElementById('title').textContent = state.leagueName + ' · ' + formatDate(state.date);
+      document.title = 'Control Panel – ' + state.leagueName;
+      document.getElementById('roundInfo').innerHTML =
+        '<b>' + state.teams.length + ' Teams</b>' +
+        (state.freeTeams.length ? ' · spielfrei: ' + state.freeTeams.map(escapeHtml).join(', ') : '') +
+        ' · Spieldauer ' + (state.matchDuration / 60) + ' Min, Pause ' + (state.breakDuration / 60) + ' Min';
+    }
+
+    function renderLocal() {
+      const it = currentItem(state);
+      const homeLabel = teamLabel(state.homeTeam, 'TEAM 1');
+      const awayLabel = teamLabel(state.awayTeam, 'TEAM 2');
+      const total = state.schedule.length;
+      const brk = state.phase === 'break', done = state.phase === 'done';
+
+      // Match info
+      const parts = ['Spiel ' + (state.current + 1) + ' / ' + total];
+      if (it && it.time) parts.push('Plan ' + it.time + ' Uhr');
+      if (brk) parts.unshift('Pause – als Nächstes');
+      document.getElementById('miTop').textContent = parts.join(' · ');
+      const missing = !state.homeTeam.trim() || !state.awayTeam.trim();
+      document.getElementById('miTeams').innerHTML = escapeHtml(homeLabel) + ' &nbsp;vs&nbsp; ' + escapeHtml(awayLabel) +
+        (missing ? ' <span class="warn">⚠ Teams eintragen</span>' : '');
+      const nx = state.schedule[state.current + 1];
+      document.getElementById('miNext').textContent = done ? 'Spielabend beendet'
+        : nx ? 'Danach: ' + (nx.home || '?') + ' vs ' + (nx.away || '?') + (nx.time ? ' · ' + nx.time : '')
+        : 'Letztes Spiel des Abends';
+      document.getElementById('prevBtn').disabled = state.current <= 0;
+      document.getElementById('nextBtn').disabled = state.current >= total - 1;
+
+      document.getElementById('homeScoreDisplay').textContent = state.homeScore;
+      document.getElementById('awayScoreDisplay').textContent = state.awayScore;
+      document.getElementById('homeScoreLabel').textContent = homeLabel;
+      document.getElementById('awayScoreLabel').textContent = awayLabel;
+      document.querySelectorAll('.score-btn').forEach(b => b.disabled = brk);
+
+      // Clock
+      const clockEl = document.getElementById('clockDisplay');
+      const btn = document.getElementById('startStopBtn');
+      const hint = document.getElementById('clockHint');
+      const phaseEl = document.getElementById('phaseLabel');
+      clockEl.className = 'clock-display' + (brk ? ' break' : done ? ' done' : '') + (!state.running && !done ? ' stopped' : '');
+      phaseEl.className = 'phase-label' + (brk ? ' break' : '');
+      document.getElementById('skipBreakBtn').style.display = brk ? '' : 'none';
+      btn.disabled = done;
+
+      if (done) {
+        phaseEl.textContent = '';
+        clockEl.textContent = 'SPIELABEND BEENDET';
+        btn.textContent = '✔ Beendet';
+        btn.className = 'btn-outline btn-lg';
+        hint.textContent = 'Alle Spiele gespielt. Resultate im Spielplan prüfen, dann über ☰ Menü zurück.';
+      } else if (brk) {
+        phaseEl.textContent = 'Pause';
+        clockEl.textContent = formatClock(state.breakLeft);
+        btn.textContent = state.running ? '⏸ Pause anhalten' : '▶ Pause weiter';
+        btn.className = (state.running ? 'btn-outline' : 'btn-success') + ' btn-lg';
+        hint.textContent = config.autoStartAfterBreak
+          ? 'Nach der Pause startet das Spiel automatisch (mit Horn).'
+          : 'Nach der Pause wird das Spiel von Hand gestartet.';
+      } else {
+        phaseEl.textContent = 'Spielzeit';
+        clockEl.textContent = formatClock(state.timeLeft);
+        btn.textContent = state.running ? '⏸ Stop' : '▶ Start';
+        btn.className = (state.running ? 'btn-danger' : 'btn-success') + ' btn-lg';
+        hint.textContent = !nx ? 'Letztes Spiel – nach Ablauf ist der Spielabend beendet.'
+          : state.breakDuration > 0 ? 'Nach Ablauf: Horn, ' + (state.breakDuration / 60) + ' Min Pause, dann nächstes Spiel.'
+          : 'Nach Ablauf startet das nächste Spiel ohne Pause.';
+      }
+
+      document.getElementById('homePenLabel').textContent = homeLabel;
+      document.getElementById('awayPenLabel').textContent = awayLabel;
+      renderPenalties();
+    }
+
+    function resultText(it, i) {
+      if (i === state.current && state.phase !== 'break' && (state.started || state.homeScore || state.awayScore)) {
+        return state.homeScore + ':' + state.awayScore;
+      }
+      return it.homeScore !== null ? it.homeScore + ':' + it.awayScore : '';
+    }
+
+    function updateResultCell(i) {
+      const cell = document.querySelector(`td.res[data-row="${i}"]`);
+      const it = state.schedule[i];
+      if (cell && it) cell.textContent = resultText(it, i);
+    }
+
+    function teamSelect(i, side, value) {
+      const opts = state.teams.slice();
+      if (value && !opts.includes(value)) opts.unshift(value);
+      return `<select class="${value ? '' : 'empty'}" onchange="updateTeam(${i}, '${side}', this.value)">
+        <option value="">– Team wählen –</option>
+        ${opts.map(t => `<option value="${escapeHtml(t)}"${t === value ? ' selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+      </select>`;
+    }
+
+    function renderSchedule() {
+      const wrap = document.getElementById('scheduleWrap');
+      const rows = state.schedule.map((it, i) => {
+        const cls = [i === state.current ? 'current' : '', it.homeScore !== null && i !== state.current ? 'played' : ''].join(' ');
+        return `
+          <tr class="${cls}">
+            <td class="num">${i + 1}</td>
+            <td class="time">${escapeHtml(it.time)}</td>
+            <td>${teamSelect(i, 'home', it.home)}</td>
+            <td>${teamSelect(i, 'away', it.away)}</td>
+            <td class="res" data-row="${i}">${resultText(it, i)}</td>
+            <td class="act">
+              <button class="btn-primary" title="Zu diesem Spiel springen" onclick="jumpTo(${i})"${i === state.current && state.phase === 'match' ? ' disabled' : ''}>▶</button>
+              <button class="btn-outline" title="Resultat korrigieren" onclick="editResult(${i})">✎</button>
+              <button class="btn-outline" title="Nach oben" onclick="moveItem(${i}, -1)">↑</button>
+              <button class="btn-outline" title="Nach unten" onclick="moveItem(${i}, 1)">↓</button>
+              <button class="btn-outline" title="Löschen" onclick="deleteItem(${i})">✕</button>
+            </td>
+          </tr>`;
+      }).join('');
+      wrap.innerHTML = `
+        <table class="sched">
+          <thead><tr><th>#</th><th>Zeit</th><th>Team 1</th><th>Team 2</th><th>Res.</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      const cur = wrap.querySelector('tr.current');
+      if (cur && !wrap.contains(document.activeElement)) wrap.scrollTop = Math.max(0, cur.offsetTop - 60);
+    }
+
+    function renderPenalties() {
+      renderPenaltyList('homePenList', state.homePenalties, 'home');
+      renderPenaltyList('awayPenList', state.awayPenalties, 'away');
+    }
+
+    function renderPenaltyList(elementId, penalties, team) {
+      const container = document.getElementById(elementId);
+      if (!penalties.length) {
+        container.innerHTML = '<div style="color:#2a3352;font-style:italic;font-size:0.85rem;">Keine Strafen</div>';
+        return;
+      }
+      container.innerHTML = penaltyStatus(penalties).map(({ p, waiting }) => `
+        <div class="penalty-item${waiting ? ' queued' : ''}">
+          <span class="pi-dur${p.duration > 120 ? ' p10' : ''}">${p.duration > 120 ? '10 MIN' : '2 MIN'}${p.label ? ' (' + p.label + ')' : ''}${waiting ? ' · wartet' : ''}</span>
+          <span class="pi-time" data-pen-id="${p.id}">${formatTime(p.timeLeft)}</span>
+          <button class="btn-outline btn-sm" title="Diese Strafe löschen" onclick="removePenalty('${team}', ${p.id})">✕</button>
+        </div>`).join('');
+    }
+
+    function updatePenaltyTimes() {
+      [...state.homePenalties, ...state.awayPenalties].forEach(p => {
+        const el = document.querySelector(`[data-pen-id="${p.id}"]`);
+        if (el) el.textContent = formatTime(p.timeLeft);
+      });
+    }
+
+    // ── Init ──
+    if (hasRound(state)) {
+      if (state.current >= state.schedule.length) state.current = state.schedule.length - 1;
+      document.getElementById('setMinutes').value = state.matchDuration / 60;
+      renderHeader();
+      renderLocal();
+      renderSchedule();
+      broadcast();
+    }
+
+    // Space bar toggles the clock (unless typing in a field)
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+        e.preventDefault();
+        toggleClock();
+      }
+    });
+  </script>
+</body>
+</html>

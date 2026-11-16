@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neue Runde</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    input[type="date"], input[type="time"] {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+      padding: 6px 10px; color: #e0e6f0; font-size: 0.88rem; font-family: inherit; outline: none; color-scheme: dark;
+    }
+    .step { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: #0077b6; color: #fff;
+            align-items: center; justify-content: center; font-size: 0.7rem; margin-right: 6px; letter-spacing: 0; }
+    .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+    .team-chk { display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06);
+                border-radius: 6px; padding: 7px 10px; cursor: pointer; font-size: 0.88rem; text-transform: none; letter-spacing: 0; color: #c8d0e8; font-weight: 500; }
+    .team-chk.off { opacity: 0.5; text-decoration: line-through; }
+    .team-summary { margin-top: 8px; font-size: 0.82rem; color: #8896b3; }
+    .sched select { width: 100%; }
+    .sched td.time { font-family: 'Orbitron', sans-serif; font-size: 0.78rem; color: #8896b3; width: 60px; }
+    .sched td.vs { width: 20px; text-align: center; color: #5a6688; }
+    .sched select.empty, .sched select.bad { border-color: rgba(255,152,0,0.6); }
+    .stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .stat { background: rgba(0,0,0,0.25); border-radius: 6px; padding: 4px 9px; font-size: 0.78rem; }
+    .stat b { color: #00d4ff; margin-left: 4px; }
+    .stat.zero b { color: #ff9800; }
+    .msgs { margin-top: 8px; }
+    .msg { font-size: 0.8rem; color: #ffb74d; background: rgba(255,152,0,0.1); border-radius: 6px; padding: 6px 10px; margin-top: 4px; }
+    .msg.err { color: #ff8a9b; background: rgba(255,76,106,0.12); }
+    .footer { display: flex; gap: 8px; justify-content: flex-end; position: sticky; bottom: 0; background: #0d1120; padding: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>Neue Runde</h1>
+
+  <div class="section">
+    <div class="section-title"><span class="step">1</span>Liga und Spielabend</div>
+    <div class="row">
+      <div class="field" style="flex:2">
+        <label for="league">Liga</label>
+        <select id="league" onchange="selectLeague(this.value)"></select>
+      </div>
+      <div class="field">
+        <label for="date">Datum</label>
+        <input type="date" id="date">
+      </div>
+      <div class="field">
+        <label for="startTime">Start 1. Spiel</label>
+        <input type="time" id="startTime" onchange="renderSchedule()">
+      </div>
+    </div>
+    <div class="hint" id="durHint"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="step">2</span>Teams an diesem Abend</div>
+    <div class="hint">Haken entfernen bei den Teams, die spielfrei haben (normalerweise 3).</div>
+    <div class="team-grid" id="teamGrid"></div>
+    <div class="team-summary" id="teamSummary"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="step">3</span>Spielplan</div>
+    <div class="hint">Spiele in der Reihenfolge des Abends erfassen. Die Zeiten werden aus Startzeit, Spieldauer und Pause berechnet.</div>
+    <div id="scheduleWrap"></div>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+      <button class="btn-primary btn-sm" onclick="addRow()">+ Spiel</button>
+      <button class="btn-outline btn-sm" onclick="clearRows()">Alle Spiele leeren</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="msgs" id="msgs"></div>
+  </div>
+
+  <div class="footer">
+    <button class="btn-outline btn-lg" onclick="cancel()">Abbrechen</button>
+    <button class="btn-success btn-lg" onclick="startRound()">▶ Runde starten</button>
+  </div>
+
+  <script src="js/leagues.js"></script>
+  <script src="js/sync.js"></script>
+  <script>
+    const config = loadConfig();
+    let league = null;
+    let selected = new Set();          // teams playing tonight
+    let rows = [];                     // [{ home, away }]
+
+    function todayIso() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function slotMinutes() { return config.matchDurationMin + config.breakDurationMin; }
+
+    // ── Step 1 ──
+    const leagueSel = document.getElementById('league');
+    leagueSel.innerHTML = config.leagues.map(l =>
+      `<option value="${escapeHtml(l.id)}">${escapeHtml(l.name)} (${l.teams.length} Teams)</option>`).join('');
+    document.getElementById('date').value = todayIso();
+    document.getElementById('startTime').value = config.lastStartTime || '19:00';
+    document.getElementById('durHint').textContent =
+      'Spieldauer ' + config.matchDurationMin + ' Min · Pause ' + config.breakDurationMin + ' Min (änderbar in den Einstellungen).';
+
+    function selectLeague(id) {
+      const hasEntries = rows.some(r => r.home || r.away);
+      const next = config.leagues.find(l => l.id === id) || null;
+      if (league && hasEntries && next !== league && !confirm('Liga wechseln? Der erfasste Spielplan wird geleert.')) {
+        leagueSel.value = league.id;
+        return;
+      }
+      league = next;
+      selected = new Set(league ? league.teams : []);
+      rows = Array.from({ length: 6 }, () => ({ home: '', away: '' }));
+      renderTeams();
+      renderSchedule();
+    }
+
+    // ── Step 2 ──
+    function renderTeams() {
+      const grid = document.getElementById('teamGrid');
+      if (!league || !league.teams.length) {
+        grid.innerHTML = '<div class="sched-empty">Diese Liga hat noch keine Teams – in den Einstellungen erfassen.</div>';
+      } else {
+        grid.innerHTML = league.teams.map((t, i) => `
+          <label class="team-chk${selected.has(t) ? '' : ' off'}">
+            <input type="checkbox" ${selected.has(t) ? 'checked' : ''} onchange="toggleTeam(${i}, this.checked)">
+            ${escapeHtml(t)}
+          </label>`).join('');
+      }
+      const free = league ? league.teams.filter(t => !selected.has(t)) : [];
+      document.getElementById('teamSummary').innerHTML = league
+        ? '<b>' + selected.size + '</b> Teams spielen' + (free.length ? ' · spielfrei (' + free.length + '): ' + free.map(escapeHtml).join(', ') : ' · keine spielfrei')
+        : '';
+    }
+
+    function toggleTeam(i, on) {
+      const t = league.teams[i];
+      if (on) selected.add(t); else selected.delete(t);
+      renderTeams();
+      renderSchedule();
+    }
+
+    // ── Step 3 ──
+    function playing() { return league ? league.teams.filter(t => selected.has(t)) : []; }
+
+    function teamOptions(value) {
+      const opts = playing();
+      if (value && !opts.includes(value)) opts.unshift(value);   // keep a team that was unticked (shown as error)
+      return '<option value="">– Team wählen –</option>' +
+        opts.map(t => `<option value="${escapeHtml(t)}"${t === value ? ' selected' : ''}>${escapeHtml(t)}</option>`).join('');
+    }
+
+    function renderSchedule() {
+      const start = document.getElementById('startTime').value;
+      const wrap = document.getElementById('scheduleWrap');
+      if (!rows.length) {
+        wrap.innerHTML = '<div class="sched-empty">Noch keine Spiele – „+ Spiel“ klicken.</div>';
+      } else {
+        wrap.innerHTML = `<table class="sched">
+          <thead><tr><th>#</th><th>Zeit</th><th>Team 1</th><th></th><th>Team 2</th><th></th></tr></thead>
+          <tbody>${rows.map((r, i) => {
+            const cls = side => !r[side] ? 'empty' : (!selected.has(r[side]) || (r.home && r.home === r.away)) ? 'bad' : '';
+            return `<tr>
+              <td class="num">${i + 1}</td>
+              <td class="time">${addMinutes(start, i * slotMinutes())}</td>
+              <td><select class="${cls('home')}" onchange="setRow(${i}, 'home', this.value)">${teamOptions(r.home)}</select></td>
+              <td class="vs">vs</td>
+              <td><select class="${cls('away')}" onchange="setRow(${i}, 'away', this.value)">${teamOptions(r.away)}</select></td>
+              <td class="act">
+                <button class="btn-outline" title="Teams tauschen" onclick="swapRow(${i})">⇄</button>
+                <button class="btn-outline" title="Nach oben" onclick="moveRow(${i}, -1)"${i === 0 ? ' disabled' : ''}>↑</button>
+                <button class="btn-outline" title="Nach unten" onclick="moveRow(${i}, 1)"${i === rows.length - 1 ? ' disabled' : ''}>↓</button>
+                <button class="btn-outline" title="Löschen" onclick="deleteRow(${i})">✕</button>
+              </td>
+            </tr>`;
+          }).join('')}</tbody></table>`;
+      }
+      renderChecks();
+    }
+
+    function setRow(i, side, value) { rows[i][side] = value; renderSchedule(); }
+    function swapRow(i) { const r = rows[i]; [r.home, r.away] = [r.away, r.home]; renderSchedule(); }
+    function addRow() { rows.push({ home: '', away: '' }); renderSchedule(); }
+    function deleteRow(i) { rows.splice(i, 1); renderSchedule(); }
+    function moveRow(i, d) {
+      const j = i + d;
+      if (j < 0 || j >= rows.length) return;
+      [rows[i], rows[j]] = [rows[j], rows[i]];
+      renderSchedule();
+    }
+    function clearRows() {
+      if (!confirm('Alle Spiele leeren?')) return;
+      rows = rows.map(() => ({ home: '', away: '' }));
+      renderSchedule();
+    }
+
+    // Hints and errors. Returns the list of blocking errors.
+    function renderChecks() {
+      const errors = [], warnings = [];
+      const counts = new Map(playing().map(t => [t, 0]));
+      const pairs = new Map();
+      rows.forEach((r, i) => {
+        const n = i + 1;
+        if (!r.home || !r.away) { if (r.home || r.away) errors.push('Spiel ' + n + ': zweites Team fehlt.'); return; }
+        if (r.home === r.away) errors.push('Spiel ' + n + ': gleiches Team zweimal.');
+        [r.home, r.away].forEach(t => {
+          if (!selected.has(t)) errors.push('Spiel ' + n + ': „' + t + '“ hat spielfrei (nicht ausgewählt).');
+          counts.set(t, (counts.get(t) || 0) + 1);
+        });
+        const key = [r.home, r.away].sort().join('|');
+        if (pairs.has(key)) warnings.push('Spiel ' + n + ': gleiche Begegnung wie Spiel ' + pairs.get(key) + '.');
+        else pairs.set(key, n);
+        const prev = rows[i - 1];
+        if (prev) [r.home, r.away].filter(t => t === prev.home || t === prev.away)
+          .forEach(t => warnings.push('Spiel ' + (n - 1) + ' und ' + n + ': „' + t + '“ spielt zweimal hintereinander.'));
+      });
+      const games = rows.filter(r => r.home && r.away).length;
+      if (!games) errors.push('Noch kein Spiel erfasst.');
+      if (rows.some(r => !r.home && !r.away) && games) warnings.push('Leere Zeilen werden beim Start ignoriert.');
+      if (selected.size < 2) errors.push('Mindestens 2 Teams auswählen.');
+
+      document.getElementById('stats').innerHTML = [...counts].map(([t, c]) =>
+        `<span class="stat${c === 0 ? ' zero' : ''}">${escapeHtml(t)}<b>${c}</b></span>`).join('');
+      document.getElementById('msgs').innerHTML =
+        errors.map(m => `<div class="msg err">✕ ${escapeHtml(m)}</div>`).join('') +
+        warnings.map(m => `<div class="msg">⚠ ${escapeHtml(m)}</div>`).join('');
+      return errors;
+    }
+
+    function startRound() {
+      const errors = renderChecks();
+      if (errors.length) { alert('Bitte zuerst korrigieren:\n\n' + errors.join('\n')); return; }
+      const start = document.getElementById('startTime').value || '';
+      const r = getEmptyRound();
+      r.competitionName = config.competitionName;
+      r.leagueId = league.id;
+      r.leagueName = league.name;
+      r.date = document.getElementById('date').value;
+      r.startTime = start;
+      r.teams = playing();
+      r.freeTeams = league.teams.filter(t => !selected.has(t));
+      r.matchDuration = config.matchDurationMin * 60;
+      r.breakDuration = config.breakDurationMin * 60;
+      r.timeLeft = r.matchDuration;
+      r.schedule = rows.filter(x => x.home && x.away).map(x => makeScheduleItem({ home: x.home, away: x.away }));
+      recomputeTimes(r);
+      r.current = 0;
+      r.homeTeam = r.schedule[0].home;
+      r.awayTeam = r.schedule[0].away;
+      saveRound(r);
+      config.lastStartTime = start || config.lastStartTime;
+      config.lastLeagueId = league.id;
+      saveConfig(config);
+      location.href = 'control.html';
+    }
+
+    function cancel() {
+      if (rows.some(r => r.home || r.away) && !confirm('Neue Runde verwerfen?')) return;
+      location.href = 'menu.html';
+    }
+
+    // Init: last used league
+    const initial = config.leagues.find(l => l.id === config.lastLeagueId) || config.leagues[0];
+    if (initial) { leagueSel.value = initial.id; selectLeague(initial.id); }
+    else {
+      leagueSel.innerHTML = '<option>– keine Ligen –</option>';
+      renderTeams(); renderSchedule();
+    }
+  </script>
+</body>
+</html>

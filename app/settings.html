@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Einstellungen</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .league-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+    .league-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+    .league-head input { flex: 1; font-weight: 700; }
+    .league-card textarea { min-height: 150px; font-family: inherit; font-size: 0.85rem; }
+    .league-count { font-size: 0.72rem; color: #5a6688; margin-top: 3px; }
+    .chk { display: flex; gap: 8px; align-items: center; font-size: 0.85rem; cursor: pointer; text-transform: none; letter-spacing: 0; color: #c8d0e8; font-weight: 500; }
+    .footer { display: flex; gap: 8px; justify-content: flex-end; position: sticky; bottom: 0; background: #0d1120; padding: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>Einstellungen</h1>
+
+  <div class="section">
+    <div class="section-title">Allgemein</div>
+    <div class="row">
+      <div class="field" style="flex:2">
+        <label for="compName">Name der Meisterschaft (Titel auf dem Scoreboard)</label>
+        <input type="text" id="compName" maxlength="60">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="matchDur">Spieldauer (Minuten)</label>
+        <input type="number" id="matchDur" min="1" max="60">
+      </div>
+      <div class="field">
+        <label for="breakDur">Pause zwischen den Spielen (Minuten)</label>
+        <input type="number" id="breakDur" min="0" max="30">
+      </div>
+    </div>
+    <label class="chk"><input type="checkbox" id="autoStart"> Nach der Pause startet das nächste Spiel automatisch</label>
+    <div class="hint" style="margin-top:6px;">Änderungen an Spieldauer und Pause gelten auch für eine laufende Runde (ab dem nächsten Spiel bzw. sofort, wenn die Uhr noch nicht gestartet wurde).</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Ligen und Teams</div>
+    <div class="hint">Ein Team pro Zeile. Diese Listen erscheinen bei „Neue Runde“ zur Auswahl.</div>
+    <div id="leagues"></div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn-primary btn-sm" onclick="addLeague()">+ Liga</button>
+      <button class="btn-outline btn-sm" onclick="restoreDefaults()">Standard-Ligen (straubsportcup.ch, Saison 26/27) wiederherstellen</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="btn-outline btn-lg" onclick="leave()">Abbrechen</button>
+    <button class="btn-success btn-lg" onclick="save()">💾 Speichern</button>
+  </div>
+
+  <script src="js/leagues.js"></script>
+  <script src="js/sync.js"></script>
+  <script>
+    const from = new URLSearchParams(location.search).get('from');
+    const config = loadConfig();
+    let leagues = config.leagues.map(l => ({ id: l.id, name: l.name, teams: l.teams.slice() }));
+    let dirty = false;
+
+    document.getElementById('compName').value = config.competitionName;
+    document.getElementById('matchDur').value = config.matchDurationMin;
+    document.getElementById('breakDur').value = config.breakDurationMin;
+    document.getElementById('autoStart').checked = config.autoStartAfterBreak;
+    document.querySelectorAll('input').forEach(el => el.addEventListener('input', () => dirty = true));
+
+    function parseTeams(text) {
+      const seen = new Set();
+      return text.split(/\r?\n/).map(t => t.trim()).filter(t => t && !seen.has(t) && seen.add(t));
+    }
+
+    function renderLeagues() {
+      document.getElementById('leagues').innerHTML = leagues.map((l, i) => `
+        <div class="league-card">
+          <div class="league-head">
+            <input type="text" value="${escapeHtml(l.name)}" placeholder="Name der Liga" oninput="leagues[${i}].name = this.value; dirty = true">
+            <button class="btn-outline btn-sm" title="Nach oben" onclick="moveLeague(${i}, -1)"${i === 0 ? ' disabled' : ''}>↑</button>
+            <button class="btn-outline btn-sm" title="Nach unten" onclick="moveLeague(${i}, 1)"${i === leagues.length - 1 ? ' disabled' : ''}>↓</button>
+            <button class="btn-danger btn-sm" title="Liga löschen" onclick="deleteLeague(${i})">✕</button>
+          </div>
+          <textarea placeholder="Team A&#10;Team B&#10;…" oninput="updateTeams(${i}, this)">${escapeHtml(l.teams.join('\n'))}</textarea>
+          <div class="league-count" id="count${i}">${l.teams.length} Teams</div>
+        </div>`).join('') || '<div class="sched-empty">Noch keine Ligen.</div>';
+    }
+
+    function updateTeams(i, el) {
+      leagues[i].teams = parseTeams(el.value);
+      document.getElementById('count' + i).textContent = leagues[i].teams.length + ' Teams';
+      dirty = true;
+    }
+
+    function addLeague() {
+      leagues.push({ id: newId(), name: 'Neue Liga', teams: [] });
+      dirty = true;
+      renderLeagues();
+      const inputs = document.querySelectorAll('.league-head input');
+      inputs[inputs.length - 1].select();
+    }
+
+    function deleteLeague(i) {
+      if (!confirm('Liga „' + leagues[i].name + '“ mit ' + leagues[i].teams.length + ' Teams löschen?')) return;
+      leagues.splice(i, 1);
+      dirty = true;
+      renderLeagues();
+    }
+
+    function moveLeague(i, d) {
+      const j = i + d;
+      if (j < 0 || j >= leagues.length) return;
+      [leagues[i], leagues[j]] = [leagues[j], leagues[i]];
+      dirty = true;
+      renderLeagues();
+    }
+
+    function restoreDefaults() {
+      if (!confirm('Alle Ligen und Teams durch die Standardliste (Saison 26/27) ersetzen? Eigene Änderungen gehen verloren.')) return;
+      leagues = getDefaultLeagues();
+      dirty = true;
+      renderLeagues();
+    }
+
+    function num(id, min, max, def) {
+      const v = parseInt(document.getElementById(id).value);
+      return isNaN(v) ? def : Math.min(max, Math.max(min, v));
+    }
+
+    function save() {
+      const names = leagues.map(l => l.name.trim());
+      if (names.some(n => !n)) { alert('Jede Liga braucht einen Namen.'); return; }
+      if (new Set(names).size !== names.length) { alert('Zwei Ligen haben den gleichen Namen.'); return; }
+      config.competitionName = document.getElementById('compName').value.trim() || config.competitionName;
+      config.matchDurationMin = num('matchDur', 1, 60, 18);
+      config.breakDurationMin = num('breakDur', 0, 30, 2);
+      config.autoStartAfterBreak = document.getElementById('autoStart').checked;
+      config.leagues = leagues.map(l => ({ id: l.id, name: l.name.trim(), teams: l.teams.slice() }));
+      saveConfig(config);
+      dirty = false;
+      leave();
+    }
+
+    function leave() {
+      if (dirty && !confirm('Änderungen verwerfen?')) return;
+      location.href = from === 'control' ? 'control.html' : 'menu.html';
+    }
+
+    renderLeagues();
+  </script>
+</body>
+</html>

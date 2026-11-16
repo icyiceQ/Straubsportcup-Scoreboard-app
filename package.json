@@ -1,0 +1,37 @@
+{
+  "name": "unihockey-scoreboard",
+  "productName": "Unihockey Scoreboard",
+  "version": "1.0.0",
+  "description": "Scoreboard für Unihockey-Meisterschaft: Ligen, Spielabende, Matchuhr mit Pause",
+  "author": "Kjell Ita",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "selftest": "set SCOREBOARD_SELFTEST=1&& electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "ch.unihockey.scoreboard",
+    "productName": "Unihockey Scoreboard",
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "build/icon.png"
+    },
+    "portable": {
+      "artifactName": "Unihockey-Scoreboard.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
+  }
+}

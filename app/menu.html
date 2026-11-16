@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unihockey Scoreboard</title>
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .menu { max-width: 520px; margin: 60px auto 0; display: flex; flex-direction: column; gap: 14px; }
+    .menu-title { text-align: center; margin-bottom: 18px; }
+    .menu-title .t1 { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 700; color: #e0e6f0; letter-spacing: 0.08em; }
+    .menu-title .t2 { font-size: 0.85rem; color: #5a6688; margin-top: 6px; letter-spacing: 0.14em; text-transform: uppercase; }
+    .menu button { padding: 18px 22px; font-size: 1.15rem; border-radius: 12px; text-align: left; display: flex; flex-direction: column; gap: 4px; white-space: normal; }
+    .menu button .sub { font-size: 0.8rem; font-weight: 500; opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="menu">
+    <div class="menu-title">
+      <div class="t1">🏑 <span id="compName"></span></div>
+      <div class="t2">Unihockey Scoreboard</div>
+    </div>
+    <button class="btn-success" id="newBtn" onclick="newRound()">
+      <span>＋ Neue Runde</span>
+      <span class="sub">Liga, Teams und Spielplan für einen Spielabend erfassen</span>
+    </button>
+    <button class="btn-primary" id="continueBtn" onclick="location.href = 'control.html'">
+      <span>▶ Bestehende Runde fortsetzen</span>
+      <span class="sub" id="continueSub"></span>
+    </button>
+    <button class="btn-outline" onclick="location.href = 'settings.html?from=menu'">
+      <span>⚙ Einstellungen</span>
+      <span class="sub">Spieldauer, Pause, Ligen und Teams</span>
+    </button>
+  </div>
+
+  <script src="js/leagues.js"></script>
+  <script src="js/sync.js"></script>
+  <script>
+    const config = loadConfig();
+    const round = loadRound();
+    document.getElementById('compName').textContent = config.competitionName;
+
+    const btn = document.getElementById('continueBtn');
+    const sub = document.getElementById('continueSub');
+    if (hasRound(round)) {
+      const played = round.schedule.filter(s => s.homeScore !== null).length;
+      sub.textContent = round.leagueName + ' · ' + formatDate(round.date) +
+        (round.phase === 'done' ? ' · beendet' : ' · Spiel ' + (round.current + 1) + ' / ' + round.schedule.length) +
+        ' (' + played + ' gespielt)';
+    } else {
+      btn.disabled = true;
+      sub.textContent = 'Keine Runde gespeichert';
+    }
+
+    function newRound() {
+      if (hasRound(round) && round.phase !== 'done' &&
+          !confirm('Die gespeicherte Runde (' + round.leagueName + ', ' + formatDate(round.date) + ') ist noch nicht beendet.\n' +
+                   'Trotzdem eine neue Runde erfassen? Die alte Runde wird beim Start der neuen ersetzt.')) return;
+      location.href = 'setup.html';
+    }
+  </script>
+</body>
+</html>

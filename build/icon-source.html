@@ -1,0 +1,25 @@
+<!doctype html><html><head><style>html,body{margin:0;background:transparent}svg{display:block}</style></head><body>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#13234a"/><stop offset="1" stop-color="#060b18"/></linearGradient>
+    <radialGradient id="glow" cx="0.72" cy="0.74" r="0.45"><stop offset="0" stop-color="#00d4ff" stop-opacity="0.32"/><stop offset="1" stop-color="#00d4ff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="ball" cx="0.38" cy="0.32" r="0.75"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd8ea"/></radialGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg)"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#glow)"/>
+  <rect x="18" y="18" width="476" height="476" rx="106" fill="none" stroke="#00d4ff" stroke-opacity="0.45" stroke-width="4"/>
+  <!-- blade, pointing right toward the ball -->
+  <path d="M206 352 L 224 418 Q 230 438 252 436 L 318 428 Q 342 424 334 404 Q 328 392 312 390 L 252 380 Z" fill="#ffd54f"/>
+  <!-- shaft + grip -->
+  <line x1="122" y1="84" x2="226" y2="380" stroke="#00d4ff" stroke-width="40" stroke-linecap="round"/>
+  <line x1="122" y1="84" x2="152" y2="170" stroke="#0090c0" stroke-width="44" stroke-linecap="round"/>
+  <!-- floorball -->
+  <circle cx="396" cy="384" r="62" fill="url(#ball)"/>
+  <g fill="#1b2b52">
+    <circle cx="396" cy="384" r="10"/>
+    <circle cx="366" cy="360" r="8.5"/><circle cx="426" cy="360" r="8.5"/>
+    <circle cx="366" cy="408" r="8.5"/><circle cx="426" cy="408" r="8.5"/>
+    <circle cx="396" cy="340" r="7.5"/><circle cx="396" cy="428" r="7.5"/>
+    <circle cx="352" cy="384" r="7.5"/><circle cx="440" cy="384" r="7.5"/>
+  </g>
+</svg></body></html>

@@ -1,0 +1,19 @@
+# Abhängigkeiten (npm install)
+node_modules/
+
+# Build-Ausgabe (npm run dist)
+dist/
+
+# Logs
+npm-debug.log*
+*.log
+
+# Betriebssystem / Editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Lokale Notizen / Testdateien
+Untitled-*.json
