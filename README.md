@@ -9,6 +9,12 @@ Spieluhr, Resultate, Strafen und ein grosses Scoreboard für Beamer oder TV.
 - Zwei Bildschirme: den Laptop-Bildschirm für die Bedienung und einen Beamer oder TV für das Scoreboard
 - Kein Internet nötig
 
+## Herunterladen
+
+**➜ [Neueste Version herunterladen](https://github.com/icyiceQ/Straubsportcup-Scoreboard-app/releases/latest)**
+
+Auf der Seite unter „Assets“ die passende Datei wählen:
+
 | PC | Datei |
 |---|---|
 | Normaler Windows-PC (Intel/AMD) | `Unihockey-Scoreboard-Windows-x64.exe` |
