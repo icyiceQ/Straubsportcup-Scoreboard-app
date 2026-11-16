@@ -9,19 +9,9 @@ Spielabende mit Spielplan, Matchuhr mit Pause, 2-Min-Strafen und Scoreboard für
 |---|---|---|
 | Windows 10/11 (Intel/AMD) | `Unihockey-Scoreboard-Windows-x64.exe` | Doppelklick, keine Installation |
 | Windows 11 auf ARM | `Unihockey-Scoreboard-Windows-arm64.exe` | Doppelklick, keine Installation |
-| macOS Apple Silicon (M1–M4) | `Unihockey-Scoreboard-macOS-arm64.dmg` | DMG öffnen, App in „Programme“ ziehen |
 
-Die Windows-Dateien entstehen lokal mit `npm run dist` in `dist\`. Alle Dateien baut GitHub Actions bei
-jedem Push automatisch (GitHub → Actions → letzter Lauf → „Artifacts“); bei einem Tag `v…` zusätzlich als Release.
-
-**macOS:** Die App ist nicht von Apple beglaubigt. Meldet macOS beim ersten Start „beschädigt“ oder
-„kann nicht geöffnet werden“, einmal im Terminal ausführen:
-
-```
-xattr -cr "/Applications/Unihockey Scoreboard.app"
-```
-
-Danach startet sie normal (alternativ: Rechtsklick → Öffnen, bzw. Systemeinstellungen → Datenschutz & Sicherheit → „Trotzdem öffnen“).
+Die Dateien entstehen lokal mit `npm run dist` in `dist\`. GitHub Actions baut sie zusätzlich bei
+jedem Push (GitHub → Actions → letzter Lauf → „Artifacts“); bei einem Tag `v…` auch als Release.
 
 Beim Start erscheint das **Menü**:
 
@@ -51,10 +41,9 @@ npm install          # einmalig
 npm start            # App starten
 npm run selftest     # automatischer Test (unsichtbar, eigene Testdaten)
 npm run dist         # Windows x64 + ARM64 bauen (dist\*.exe)
-npm run dist:mac     # macOS Apple Silicon (nur auf einem Mac, sonst über GitHub Actions)
 ```
 
-Workflow: `.github/workflows/build.yml` (Windows- und macOS-Runner).
+Workflow: `.github/workflows/build.yml` (Windows-Build auf GitHub).
 
 Hinweis: In einem VS-Code-Terminal ist `ELECTRON_RUN_AS_NODE=1` gesetzt. Dann startet
 Electron nicht richtig – vorher in PowerShell `Remove-Item Env:ELECTRON_RUN_AS_NODE` ausführen.
