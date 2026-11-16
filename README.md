@@ -53,3 +53,10 @@ Electron nicht richtig – vorher in PowerShell `Remove-Item Env:ELECTRON_RUN_AS
 - `app/js/sync.js` – Speichern/Laden von Einstellungen und Runde, Zeitformate, Nachrichten
 - `app/css/common.css` – gemeinsame Styles der Bedienseiten
 - `build/icon.png` – App-Icon für die exe (Quelle: `build/icon-source.html`), Kopie als `app/icon.png` für die Fenster
+
+## Lizenz
+
+[MIT](LICENSE) © 2026 Kjell Ita
+
+Die mitgelieferten Schriften stehen unter der SIL Open Font License 1.1:
+Inter ([app/fonts/OFL-Inter.txt](app/fonts/OFL-Inter.txt)) und Orbitron ([app/fonts/OFL-Orbitron.txt](app/fonts/OFL-Orbitron.txt)).

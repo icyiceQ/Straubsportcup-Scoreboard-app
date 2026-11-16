@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Scoreboard für Unihockey-Meisterschaft: Ligen, Spielabende, Matchuhr mit Pause",
   "author": "Kjell Ita",
+  "license": "MIT",
   "main": "main.js",
   "private": true,
   "scripts": {
