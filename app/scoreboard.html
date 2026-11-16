@@ -123,19 +123,6 @@
       justify-content: center;
     }
 
-    .next-match {
-      position: fixed;
-      left: 0; right: 0; bottom: 28px;
-      text-align: center;
-      font-family: 'Orbitron', sans-serif;
-      font-size: calc(1.6rem + 2pt);   /* 1.6rem + 2 Punkte */
-      font-weight: 500;
-      color: #6b7a99;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .next-match b { color: #c0c8e0; font-weight: 700; }
-
     /* ── Score Row ── */
     .score-row {
       display: flex;
@@ -154,18 +141,19 @@
       gap: 0.3rem;
     }
 
-    .team-block.home { align-items: flex-end; padding-right: 60px; }
-    .team-block.away { align-items: flex-start; padding-left: 60px; }
+    .team-block.home { align-items: flex-end; padding-right: 36px; text-align: right; }
+    .team-block.away { align-items: flex-start; padding-left: 36px; text-align: left; }
 
     .team-name {
       font-family: 'Orbitron', sans-serif;
-      font-size: 3.5rem;
+      font-size: 96px;              /* reduced by fitTeamName() until it fits in two lines */
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      white-space: nowrap;
+      letter-spacing: 0.03em;
+      line-height: 1.08;
+      white-space: normal;
+      text-wrap: balance;           /* two lines of similar length */
       overflow: hidden;
-      text-overflow: ellipsis;
       max-width: 100%;
     }
 
@@ -211,9 +199,17 @@
       color: #2a3352;
     }
 
+    /* ── Clock row: penalties (outside) | clock | penalties (outside) ── */
+    .clock-row {
+      margin-top: 32px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+    }
+
     /* ── Clock ── */
     .clock-section {
-      margin-top: 32px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -261,66 +257,37 @@
       color: #3d4a6b;
     }
 
-    /* ── Penalty Boxes ── */
-    .penalties-section {
-      margin-top: 10px;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      gap: 80px;
-    }
-
+    /* ── Penalty Boxes (left/right of the clock, at the outer edges) ── */
     .penalty-box {
-      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
+      padding-top: 24px;
     }
 
-    .penalty-box.home { align-items: flex-end; }
-    .penalty-box.away { align-items: flex-start; }
-
-    .penalty-header {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: #3d4a6b;
-      margin-bottom: 6px;
-    }
+    .penalty-box.home { align-items: flex-start; }   /* left edge */
+    .penalty-box.away { align-items: flex-end; }     /* right edge */
 
     .penalty-card {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 20px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 10px;
-      padding: 12px 28px;
-      min-width: 280px;
-      backdrop-filter: blur(8px);
+      gap: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px 30px 10px;
+      min-width: 330px;
     }
-
-    .penalty-box.home .penalty-card { flex-direction: row-reverse; }
-    .penalty-card.waiting { opacity: 0.45; }
-
-    .penalty-player {
-      font-weight: 600;
-      font-size: 1.3rem;
-      color: #c0c8e0;
-      min-width: 80px;
-    }
-
-    .penalty-box.home .penalty-player { text-align: right; }
+    .penalty-card.waiting { opacity: 0.4; }
 
     .penalty-duration-badge {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.95rem;
+      font-size: 1.6rem;
       font-weight: 700;
-      padding: 5px 12px;
-      border-radius: 6px;
-      color: #fff;
+      padding: 4px 18px;
+      border-radius: 8px;
+      letter-spacing: 0.06em;
     }
 
     .penalty-duration-badge.min2 { background: rgba(255,193,7,0.25); color: #ffd54f; border: 1px solid rgba(255,193,7,0.3); }
@@ -328,14 +295,13 @@
 
     .penalty-time {
       font-family: 'Orbitron', sans-serif;
-      font-size: 2rem;
+      font-size: 88px;
       font-weight: 700;
+      line-height: 1.05;
       color: #ffd54f;
-      min-width: 100px;
+      font-variant-numeric: tabular-nums;
     }
-
-    .penalty-box.home .penalty-time { text-align: right; }
-    .penalty-box.away .penalty-time { text-align: left; }
+    .penalty-card.p10 .penalty-time { color: #ef5350; }
 
     .penalty-empty {
       font-size: 1.1rem;
@@ -361,7 +327,6 @@
     <div class="score-row">
       <div class="team-block home">
         <div class="team-name" id="awayTeamName">AWAY</div>
-        <div class="team-sub">&nbsp;</div>
       </div>
 
       <div class="score-center">
@@ -372,25 +337,21 @@
 
       <div class="team-block away">
         <div class="team-name" id="homeTeamName">HOME</div>
-        <div class="team-sub">&nbsp;</div>
       </div>
     </div>
 
-    <!-- Clock -->
+    <!-- Clock row: penalties left | clock | penalties right -->
+    <div class="clock-row">
+      <div class="penalty-box home" id="awayPenalties"></div>
     <div class="clock-section">
       <div class="banner" id="banner"></div>
       <div class="clock stopped" id="clock"><span class="digit">1</span><span class="digit">8</span><span class="colon">:</span><span class="digit">0</span><span class="digit">0</span></div>
       <div class="clock-label" id="clockLabel">Restzeit</div>
     </div>
-
-    <!-- 2-minute penalties -->
-    <div class="penalties-section">
-      <div class="penalty-box home" id="awayPenalties"></div>
       <div class="penalty-box away" id="homePenalties"></div>
     </div>
   </div>
 
-  <div class="next-match" id="nextMatch"></div>
 
   <script src="js/leagues.js"></script>
   <script src="js/sync.js"></script>
@@ -446,32 +407,30 @@
       const matchLabel = document.getElementById('matchLabel');
       const periodEl = document.getElementById('period');
       const matchTime = document.getElementById('matchTime');
-      const nextEl = document.getElementById('nextMatch');
 
       // No round yet: only the name of the championship
       if (!it) {
         title.style.display = 'none';
         show('.period-bar', false);
         show('.score-row', false);
-        show('.penalties-section', false);
+        showPenalties(false);
         clock.style.display = 'none';
         clockLabel.textContent = '';
         banner.textContent = state.competitionName || loadConfig().competitionName;
         banner.style.display = 'flex';
         banner.style.marginTop = '300px';
-        nextEl.innerHTML = '';
         return;
       }
       banner.style.marginTop = '';
       show('.period-bar', true);
       show('.score-row', true);
-      show('.penalties-section', !brk && !done);
+      showPenalties(!brk && !done);
 
       title.textContent = [state.competitionName, state.leagueName].filter(Boolean).join(' · ');
       title.style.display = title.textContent ? '' : 'none';
 
-      setFitted('homeTeamName', teamName(state.homeTeam));
-      setFitted('awayTeamName', teamName(state.awayTeam));
+      fitTeamName('homeTeamName', teamName(state.homeTeam));
+      fitTeamName('awayTeamName', teamName(state.awayTeam));
       [['homeScore', state.homeScore], ['awayScore', state.awayScore]].forEach(([id, val]) => {
         const el = document.getElementById(id);
         el.textContent = val;
@@ -512,31 +471,27 @@
         clockLabel.textContent = brk ? 'Pause' : 'Restzeit';
       }
 
-      // Following match
-      const nx = done ? null : schedule[state.current + 1];
-      nextEl.innerHTML = nx
-        ? 'Danach: <b>' + escapeHtml(teamName(nx.home)) + '</b> vs <b>' + escapeHtml(teamName(nx.away)) + '</b>' +
-          (nx.time ? ' &middot; ' + escapeHtml(nx.time) : '')
-        : '';
-
       renderPenalties('homePenalties', state.homePenalties);
       renderPenalties('awayPenalties', state.awayPenalties);
     }
 
-    // Set text and shrink font until it fits (long team names)
-    function setFitted(id, text, base = 56, min = 24) {
+    // Team name: as big as possible, at most two lines (long names wrap, e.g. before «nickname»)
+    function fitTeamName(id, text, base = 96, min = 34) {
       const el = document.getElementById(id);
       if (el.textContent === text && el.dataset.fitted === '1') return;
       el.textContent = text;
-      el.style.textOverflow = 'clip';
       let size = base;
+      const fits = () => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= size * 1.08 * 2 + 4;
       el.style.fontSize = size + 'px';
-      while (el.scrollWidth > el.clientWidth && size > min) {
+      while (!fits() && size > min) {
         size -= 2;
         el.style.fontSize = size + 'px';
       }
-      el.style.textOverflow = '';
       el.dataset.fitted = '1';
+    }
+
+    function showPenalties(on) {
+      document.querySelectorAll('.penalty-box').forEach(el => el.style.visibility = on ? '' : 'hidden');
     }
 
     function teamName(name) {
@@ -545,7 +500,7 @@
 
     function renderPenalties(elementId, penalties) {
       document.getElementById(elementId).innerHTML = penaltyStatus(penalties).map(({ p, waiting }) => `
-        <div class="penalty-card${waiting ? ' waiting' : ''}">
+        <div class="penalty-card${p.duration > 120 ? ' p10' : ''}${waiting ? ' waiting' : ''}">
           <span class="penalty-duration-badge ${p.duration > 120 ? 'min10' : 'min2'}">${p.duration > 120 ? '10 MIN' : '2 MIN'}</span>
           <span class="penalty-time">${formatTime(p.timeLeft)}</span>
         </div>`).join('');
