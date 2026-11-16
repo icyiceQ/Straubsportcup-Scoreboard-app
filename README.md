@@ -1,70 +1,95 @@
-# Unihockey Scoreboard (Electron)
+# Unihockey Scoreboard
 
-Desktop-App für die Unihockey-Meisterschaft (Straub Sport Cup): Startmenü, Ligen und Teams,
-Spielabende mit Spielplan, Matchuhr mit Pause, 2-Min-Strafen und Scoreboard für Beamer/TV.
+Anzeige und Steuerung für die Spielabende der Unihockey-Meisterschaft (Straub Sport Cup):
+Spieluhr, Resultate, Strafen und ein grosses Scoreboard für Beamer oder TV.
 
-## Benutzen
+## Was du brauchst
 
-| System | Datei | Start |
-|---|---|---|
-| Windows 10/11 (Intel/AMD) | `Unihockey-Scoreboard-Windows-x64.exe` | Doppelklick, keine Installation |
-| Windows 11 auf ARM | `Unihockey-Scoreboard-Windows-arm64.exe` | Doppelklick, keine Installation |
+- Einen Windows-PC (Windows 10 oder 11)
+- Zwei Bildschirme: den Laptop-Bildschirm für die Bedienung und einen Beamer oder TV für das Scoreboard
+- Kein Internet nötig
 
-Die Dateien entstehen lokal mit `npm run dist` in `dist\`. GitHub Actions baut sie zusätzlich bei
-jedem Push (GitHub → Actions → letzter Lauf → „Artifacts“); bei einem Tag `v…` auch als Release.
+| PC | Datei |
+|---|---|
+| Normaler Windows-PC (Intel/AMD) | `Unihockey-Scoreboard-Windows-x64.exe` |
+| Windows-PC mit ARM-Prozessor (z.B. Snapdragon) | `Unihockey-Scoreboard-Windows-arm64.exe` |
 
-Beim Start erscheint das **Menü**:
+Die Datei per Doppelklick starten – eine Installation ist nicht nötig.
+Fragt Windows beim ersten Start nach („Der Computer wurde durch Windows geschützt“):
+**Weitere Informationen → Trotzdem ausführen**.
 
-- **Neue Runde** – Liga wählen, Datum und Startzeit setzen, die Teams des Abends ankreuzen
-  (Teams mit spielfrei abwählen, normalerweise 3) und den Spielplan erfassen (6–7 Spiele).
-  Die Zeiten werden aus Startzeit + Spieldauer + Pause berechnet. „Runde starten“ öffnet das Control Panel.
-- **Bestehende Runde fortsetzen** – öffnet die gespeicherte Runde wieder (auch nach einem Neustart).
-- **Einstellungen** – Name der Meisterschaft, Spieldauer (Standard 18 Min), Pause (Standard 2 Min),
-  automatischer Start nach der Pause, Ligen und Teams (ein Team pro Zeile).
+## Bildschirme einrichten
 
-Ablauf im Control Panel: Spiel starten (▶ oder Leertaste) → nach Ablauf Horn → Pause mit
-Countdown (auch auf dem Scoreboard) → nächstes Spiel startet automatisch mit Horn.
-Nach dem letzten Spiel zeigt das Scoreboard „Spielabend beendet“.
+1. Beamer/TV anschliessen und einschalten.
+2. **Windows-Taste + P → „Erweitern“** wählen (nicht „Duplizieren“).
+3. App starten: Das Scoreboard öffnet sich automatisch im Vollbild auf dem Beamer/TV.
 
-- Das Scoreboard öffnet sich automatisch im Vollbild auf dem anderen Bildschirm (Beamer/TV).
-- **🖥 Bildschirme** im Control Panel: Bildschirm für das Scoreboard wählen, identifizieren, Vollbild ein/aus.
-- Zeigt Windows beide Bildschirme gleich: **Win + P → „Erweitern“**.
+Erscheint das Scoreboard auf dem falschen Bildschirm, im Control Panel oben rechts auf **🖥 Bildschirme**
+klicken und den richtigen Bildschirm wählen. Die Wahl wird gespeichert. Wird der Beamer kurz
+ab- und wieder angesteckt, kehrt das Scoreboard von selbst dorthin zurück.
 
-Runde, Resultate und Einstellungen werden automatisch gespeichert (`%APPDATA%\Unihockey Scoreboard`).
+## Startmenü
 
-## Entwickeln
+Nach dem Start erscheint das Menü mit drei Knöpfen:
 
-Benötigt Node.js (LTS).
+- **Neue Runde** – einen Spielabend vorbereiten (siehe unten)
+- **Bestehende Runde fortsetzen** – die zuletzt gespielte Runde wieder öffnen, z.B. nach einem Neustart des PCs
+- **Einstellungen** – Spieldauer, Pause, Ligen und Teams
 
-```
-npm install          # einmalig
-npm start            # App starten
-npm run selftest     # automatischer Test (unsichtbar, eigene Testdaten)
-npm run dist         # Windows x64 + ARM64 bauen (dist\*.exe)
-```
+## Neue Runde vorbereiten
 
-Workflow: `.github/workflows/build.yml` (Windows-Build auf GitHub).
+1. **Liga** wählen, **Datum** und **Startzeit** des ersten Spiels prüfen.
+2. **Teams des Abends**: Alle Teams der Liga sind angekreuzt. Bei den Teams mit spielfrei
+   (normalerweise 3) den Haken entfernen.
+3. **Spielplan** erfassen: pro Spiel Team 1 und Team 2 auswählen (6 oder 7 Spiele).
+   Mit „+ Spiel“ kommt eine Zeile dazu, mit ↑ ↓ ändert man die Reihenfolge.
+   Die Zeiten rechnet die App selbst aus (Spieldauer + Pause).
+   Unten sieht man, wie viele Spiele jedes Team hat. Hinweise erscheinen, wenn ein Team
+   zweimal hintereinander spielt oder eine Begegnung doppelt vorkommt.
+4. **Runde starten** – das Control Panel öffnet sich.
 
-Hinweis: In einem VS-Code-Terminal ist `ELECTRON_RUN_AS_NODE=1` gesetzt. Dann startet
-Electron nicht richtig – vorher in PowerShell `Remove-Item Env:ELECTRON_RUN_AS_NODE` ausführen.
+## Während des Spielabends (Control Panel)
 
-## Aufbau
+- **▶ Start / ⏸ Stop** startet und stoppt die Spieluhr (oder die **Leertaste**).
+- **+ / −** unter den Teamnamen ändert den Spielstand.
+- Läuft die Zeit ab, ertönt das **Horn**. Danach läuft automatisch die **Pause** (Standard 2 Minuten)
+  – auch auf dem Scoreboard sichtbar. Nach der Pause startet das nächste Spiel automatisch mit Horn.
+  Mit **„Spiel jetzt starten“** kann die Pause übersprungen werden.
+- **📯 Horn** spielt das Horn jederzeit von Hand.
+- **Zeit setzen** stellt die Uhr auf eine bestimmte Zeit; **⇄ Teams tauschen** vertauscht die Seiten.
+- **◀ Zurück / Weiter ▶** oder **▶** im Spielplan springt zu einem anderen Spiel.
+- **✎** im Spielplan korrigiert ein Resultat nachträglich.
+- Nach dem letzten Spiel zeigt das Scoreboard **„Spielabend beendet“**.
+- **☰ Menü** führt zurück ins Startmenü. Alles bleibt gespeichert.
 
-- `main.js` – Fenster, Bildschirm-Zuteilung, Nachrichten zwischen den Fenstern, Selbsttest
-- `preload.js` – Schnittstelle zwischen Seiten und `main.js`
-- `app/menu.html` – Startmenü
-- `app/setup.html` – Neue Runde (Liga, Teams, Spielplan)
-- `app/settings.html` – Einstellungen (Spieldauer, Pause, Ligen, Teams)
-- `app/control.html` – Control Panel während der Runde
-- `app/scoreboard.html` – Anzeige für Beamer/TV
-- `app/js/leagues.js` – Standard-Ligen und Teams (Saison 26/27 von straubsportcup.ch)
-- `app/js/sync.js` – Speichern/Laden von Einstellungen und Runde, Zeitformate, Nachrichten
-- `app/css/common.css` – gemeinsame Styles der Bedienseiten
-- `build/icon.png` – App-Icon für die exe (Quelle: `build/icon-source.html`), Kopie als `app/icon.png` für die Fenster
+### Strafen
+
+| Knopf | Bedeutung |
+|---|---|
+| **+ 2'** | 2-Minuten-Strafe |
+| **+ 2+2'** | zwei 2-Minuten-Strafen hintereinander (jede einzeln löschbar) |
+| **+ 2+10'** | 2 Minuten, danach läuft die persönliche 10-Minuten-Strafe |
+
+Mehrere 2-Minuten-Strafen eines Teams laufen nacheinander; wartende Strafen sind abgedunkelt.
+Mit **✕** wird eine Strafe gelöscht (z.B. nach einem Tor in Überzahl). Die Strafen laufen nur,
+wenn die Spieluhr läuft, und erscheinen gross links und rechts neben der Uhr auf dem Scoreboard.
+
+## Einstellungen
+
+- **Name der Meisterschaft** – erscheint oben auf dem Scoreboard
+- **Spieldauer** (Standard 18 Minuten) und **Pause** zwischen den Spielen (Standard 2 Minuten)
+- **Automatischer Start nach der Pause** ein/aus
+- **Ligen und Teams** – ein Team pro Zeile; Ligen hinzufügen, umbenennen, löschen.
+  „Standard-Ligen wiederherstellen“ lädt die Teams der Saison 26/27 von straubsportcup.ch.
+
+## Gut zu wissen
+
+- Runde, Resultate und Einstellungen werden laufend automatisch gespeichert – auch wenn die App
+  oder der PC abstürzt, geht nichts verloren.
+- Beim Schliessen des Control Panels fragt die App nach, ob sie wirklich beendet werden soll.
 
 ## Lizenz
 
-[MIT](LICENSE) © 2026 Kjell Ita
-
-Die mitgelieferten Schriften stehen unter der SIL Open Font License 1.1:
-Inter ([app/fonts/OFL-Inter.txt](app/fonts/OFL-Inter.txt)) und Orbitron ([app/fonts/OFL-Orbitron.txt](app/fonts/OFL-Orbitron.txt)).
+[MIT](LICENSE) © 2026 Kjell Ita. Die mitgelieferten Schriften Inter und Orbitron stehen unter der
+SIL Open Font License 1.1 ([app/fonts/OFL-Inter.txt](app/fonts/OFL-Inter.txt),
+[app/fonts/OFL-Orbitron.txt](app/fonts/OFL-Orbitron.txt)).
